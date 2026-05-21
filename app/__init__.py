@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 
 from flask import Flask
@@ -23,8 +24,17 @@ def create_app(config_class=None):
     app.config.from_object(config_class)
     config_class.init_app(app)
 
+    # Vercel serverless filesystem is read-only except /tmp.
+    # Therefore, uploaded files must be stored in /tmp/uploads on Vercel.
+    if os.getenv("VERCEL"):
+        app.config["UPLOAD_FOLDER"] = "/tmp/uploads"
+
     Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
-    Path(app.config["ML_MODELS_FOLDER"]).mkdir(parents=True, exist_ok=True)
+
+    # ML model folder should not be created on Vercel because /var/task is read-only.
+    # Locally, keep the normal ml_models folder behaviour.
+    if not os.getenv("VERCEL"):
+        Path(app.config["ML_MODELS_FOLDER"]).mkdir(parents=True, exist_ok=True)
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -53,6 +63,10 @@ def create_app(config_class=None):
 
 def _log_config_status(app):
     logger = logging.getLogger("agroguide")
+
+    if os.getenv("VERCEL"):
+        logger.info("Running on Vercel. Upload folder set to /tmp/uploads.")
+
     if not app.config.get("SEARCH_API_KEY"):
         logger.info(
             "SEARCH_API_KEY not set - chatbot will use local AgroGuide knowledge only"
@@ -86,6 +100,7 @@ def _seed_defaults(app):
             )
 
     admin_email = app.config["DEFAULT_ADMIN_EMAIL"]
+
     if not User.query.filter_by(email=admin_email).first():
         db.session.add(
             User(
