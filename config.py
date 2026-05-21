@@ -50,14 +50,33 @@ def getenv_bool(key: str, default: bool = False) -> bool:
     return raw.lower() in ("1", "true", "yes", "on")
 
 
+def is_vercel() -> bool:
+    """Return True when running inside Vercel serverless environment."""
+    return bool(os.getenv("VERCEL"))
+
+
 class Config:
     """Base configuration — all values from environment with safe defaults."""
 
     SECRET_KEY = getenv("SECRET_KEY") or "dev-change-me-in-production"
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'agroguide.db'}"
+
+    # Vercel filesystem is read-only except /tmp.
+    # Therefore SQLite must be stored in /tmp on Vercel.
+    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL") or (
+        "sqlite:////tmp/agroguide.db"
+        if is_vercel()
+        else f"sqlite:///{BASE_DIR / 'agroguide.db'}"
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    UPLOAD_FOLDER = BASE_DIR / "app" / "uploads"
+    # Uploaded files must also use /tmp on Vercel.
+    UPLOAD_FOLDER = Path(
+        getenv(
+            "UPLOAD_FOLDER",
+            "/tmp/uploads" if is_vercel() else BASE_DIR / "app" / "uploads",
+        )
+    )
+
     ML_MODELS_FOLDER = BASE_DIR / "app" / "ml_models"
     MAX_CONTENT_LENGTH = getenv_int("MAX_UPLOAD_MB", 8) * 1024 * 1024
     ALLOWED_EXTENSIONS = frozenset({"png", "jpg", "jpeg", "webp", "gif"})
@@ -75,7 +94,7 @@ class Config:
     DEFAULT_ADMIN_EMAIL = getenv("ADMIN_EMAIL", "admin@agroguide.com")
     DEFAULT_ADMIN_PASSWORD = getenv("ADMIN_PASSWORD", "Admin@12345")
 
-    # API keys — never hardcode; empty string if unset (app shows friendly message)
+    # API keys — never hardcode; empty string if unset.
     GEMINI_API_KEY = getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL = getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
     SEARCH_PROVIDER = getenv("SEARCH_PROVIDER", "tavily")
