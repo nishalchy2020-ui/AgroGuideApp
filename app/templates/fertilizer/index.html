@@ -1,0 +1,37 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Fertilizer Guidance{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-2 gap-6">
+  <form method="post" class="card space-y-4">
+    <div><label class="label">Crop</label><select name="crop_name" class="input" required>{% for name, key in crops %}<option value="{{ key }}">{{ name }}</option>{% endfor %}</select></div>
+    <div><label class="label">Growth stage</label><select name="growth_stage" class="input" required>{% for s in stages %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Soil type</label><select name="soil_type" class="input" required>{% for s in soils %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <p class="text-xs text-slate-500">Optional NPK / pH</p>
+    <div class="grid grid-cols-4 gap-2">
+      <input type="number" name="nitrogen" class="input" placeholder="N">
+      <input type="number" name="phosphorus" class="input" placeholder="P">
+      <input type="number" name="potassium" class="input" placeholder="K">
+      <input type="number" step="0.1" name="ph" class="input" placeholder="pH">
+    </div>
+    <button type="submit" class="btn-primary w-full" data-loading>{{ icon('flask-conical', 'w-4 h-4') }} Recommend fertilizer</button>
+  </form>
+  {% if result and not result.error %}
+  <div class="space-y-4">
+    <div class="glass-card">
+      <h3 class="font-bold">{{ result.crop_name }}</h3>
+      <dl class="mt-4 space-y-3 text-sm">
+        <div><dt class="text-slate-500">Type</dt><dd class="font-medium">{{ result.fertilizer_type }}</dd></div>
+        <div><dt class="text-slate-500">Nutrient focus</dt><dd>{{ result.nutrient_focus }}</dd></div>
+        <div><dt class="text-slate-500">Timing</dt><dd>{{ result.application_timing }}</dd></div>
+        <div><dt class="text-slate-500">Organic</dt><dd>{{ result.organic_alternative }}</dd></div>
+      </dl>
+    </div>
+    <div class="card border-l-4 border-red-400"><p class="text-sm"><strong>Safety:</strong> {{ result.safety_warning }}</p></div>
+  </div>
+  {% elif result and result.error %}
+  <div class="card">{{ result.error }}</div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/loaders.js') }}"></script>{% endblock %}

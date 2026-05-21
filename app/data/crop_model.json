@@ -1,0 +1,102 @@
+{
+  "model_name": "agroguide_crop_centroid_v1",
+  "model_type": "pretrained_nearest_centroid",
+  "version": "1.0",
+  "description": "Local crop recommendation model derived from AgroGuide agronomic guide centroids. Runs offline without API calls.",
+  "feature_weights": {
+    "soil": 0.24,
+    "season": 0.22,
+    "water": 0.18,
+    "temperature": 0.24,
+    "rainfall": 0.08,
+    "humidity": 0.04
+  },
+  "water_encoding": {
+    "low": 0.0,
+    "low-medium": 0.35,
+    "medium": 0.5,
+    "high": 1.0
+  },
+  "crops": {
+    "tomato": {
+      "soil_terms": ["loam", "sandy loam", "well-drained"],
+      "season_terms": ["spring", "summer"],
+      "water": "medium",
+      "temperature_c": [18, 30],
+      "rainfall_mm": [400, 800],
+      "humidity_max": 85
+    },
+    "potato": {
+      "soil_terms": ["sandy loam", "loam"],
+      "season_terms": ["spring", "cool season"],
+      "water": "medium",
+      "temperature_c": [15, 24],
+      "rainfall_mm": [500, 750],
+      "humidity_max": 85
+    },
+    "corn": {
+      "soil_terms": ["loam", "clay loam", "fertile"],
+      "season_terms": ["spring", "summer"],
+      "water": "high",
+      "temperature_c": [18, 32],
+      "rainfall_mm": [500, 1000],
+      "humidity_max": 88
+    },
+    "pepper": {
+      "soil_terms": ["loam", "well-drained"],
+      "season_terms": ["spring", "summer"],
+      "water": "medium",
+      "temperature_c": [20, 30],
+      "rainfall_mm": [450, 700],
+      "humidity_max": 85
+    },
+    "apple": {
+      "soil_terms": ["loam", "slightly acidic"],
+      "season_terms": ["perennial", "spring care"],
+      "water": "medium",
+      "temperature_c": [10, 25],
+      "rainfall_mm": [600, 1200],
+      "humidity_max": 82
+    },
+    "rice": {
+      "soil_terms": ["clay", "paddy", "water-retentive"],
+      "season_terms": ["monsoon", "wet season", "summer"],
+      "water": "high",
+      "temperature_c": [20, 35],
+      "rainfall_mm": [1000, 2000],
+      "humidity_max": 92
+    },
+    "wheat": {
+      "soil_terms": ["loam", "clay loam"],
+      "season_terms": ["winter", "cool season"],
+      "water": "low-medium",
+      "temperature_c": [10, 25],
+      "rainfall_mm": [300, 600],
+      "humidity_max": 80
+    },
+    "soybean": {
+      "soil_terms": ["loam", "well-drained"],
+      "season_terms": ["spring", "summer"],
+      "water": "medium",
+      "temperature_c": [20, 30],
+      "rainfall_mm": [450, 900],
+      "humidity_max": 86
+    },
+    "onion": {
+      "soil_terms": ["sandy loam", "loam"],
+      "season_terms": ["cool season", "winter"],
+      "water": "medium",
+      "temperature_c": [12, 24],
+      "rainfall_mm": [350, 550],
+      "humidity_max": 78
+    },
+    "cucumber": {
+      "soil_terms": ["loam", "rich organic"],
+      "season_terms": ["spring", "summer"],
+      "water": "high",
+      "temperature_c": [18, 32],
+      "rainfall_mm": [400, 600],
+      "humidity_max": 88
+    }
+  }
+}

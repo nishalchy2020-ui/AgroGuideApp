@@ -1,0 +1,32 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Irrigation Advice{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-2 gap-6">
+  <form method="post" class="card space-y-4">
+    <div><label class="label">Crop</label><select name="crop_name" class="input" required>{% for name, key in crops %}<option value="{{ key }}">{{ name }}</option>{% endfor %}</select></div>
+    <div><label class="label">Growth stage</label><select name="growth_stage" class="input" required>{% for s in stages %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Soil type</label><select name="soil_type" class="input" required>{% for s in soils %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Recent rainfall (mm, optional)</label><input type="number" name="rainfall" class="input" step="0.1"></div>
+    <button type="submit" class="btn-primary w-full" data-loading>{{ icon('droplets', 'w-4 h-4') }} Get advice</button>
+  </form>
+  {% if result and not result.error %}
+  <div class="space-y-4">
+    <div class="glass-card">
+      <h3 class="font-bold text-lg">{{ result.crop_name }}</h3>
+      <p class="mt-2 text-sm">Irrigation needed: <strong>{{ 'Yes' if result.irrigation_needed else 'No' }}</strong></p>
+      <p class="text-sm mt-2">{{ result.frequency }}</p>
+      <p class="text-xs text-slate-500 mt-2">{{ result.stage_note }}</p>
+    </div>
+    <div class="card border-l-4 border-amber-500"><h4 class="font-semibold text-sm">Overwatering</h4><p class="text-sm mt-1">{{ result.overwatering_warning }}</p></div>
+    <div class="card border-l-4 border-blue-500"><h4 class="font-semibold text-sm">Underwatering</h4><p class="text-sm mt-1">{{ result.underwatering_warning }}</p></div>
+    <div class="card"><h4 class="font-semibold text-sm mb-2">Water-saving tips</h4><ul class="text-sm list-disc list-inside text-slate-500">{% for t in result.water_saving_tips %}<li>{{ t }}</li>{% endfor %}</ul></div>
+  </div>
+  {% elif result and result.error %}
+  <div class="card text-red-500">{{ result.error }}</div>
+  {% else %}
+  <div class="card text-slate-500 text-sm">Enter crop and stage for irrigation guidance.</div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/loaders.js') }}"></script>{% endblock %}

@@ -1,0 +1,201 @@
+{
+  "tomato": {
+    "name": "Tomato",
+    "seasons": ["spring", "summer"],
+    "soils": ["loam", "sandy loam", "well-drained"],
+    "water": "medium",
+    "temp_range": [18, 30],
+    "rainfall_mm": [400, 800],
+    "fertilizer": "Balanced NPK early; higher K before fruiting. Calcium for blossom-end rot.",
+    "sowing": "Transplant seedlings after last frost; 45-60 cm spacing.",
+    "irrigation": "Drip 2-3x weekly; avoid leaf wetness. Increase at flowering/fruiting.",
+    "pest_care": "Scout for hornworms, whiteflies, early blight. Stake and prune suckers.",
+    "harvest": "60-85 days after transplant; pick when fully colored.",
+    "storage": "Cool 10-15C; avoid refrigeration for best flavor.",
+    "timeline": [
+      {"stage": "Land prep", "week": "Week 1", "task": "Test soil pH 6.0-6.8; incorporate compost."},
+      {"stage": "Sowing", "week": "Week 2-3", "task": "Start seeds indoors or buy transplants."},
+      {"stage": "Growth", "week": "Week 4-8", "task": "Mulch, stake, side-dress nitrogen lightly."},
+      {"stage": "Flowering", "week": "Week 9-12", "task": "Increase potassium; consistent moisture."},
+      {"stage": "Harvest", "week": "Week 13+", "task": "Harvest ripe fruit; remove diseased leaves."}
+    ]
+  },
+  "potato": {
+    "name": "Potato",
+    "seasons": ["spring", "cool season"],
+    "soils": ["sandy loam", "loam"],
+    "water": "medium",
+    "temp_range": [15, 24],
+    "rainfall_mm": [500, 750],
+    "fertilizer": "Higher P at planting; moderate N; avoid excess N (lush foliage, small tubers).",
+    "sowing": "Plant seed tubers 10-15 cm deep after soil reaches 7C.",
+    "irrigation": "Uniform moisture during tuber formation; reduce before harvest.",
+    "pest_care": "Colorado beetle, late blight risk in humid weather; hill rows.",
+    "harvest": "70-120 days; vine die-back signals maturity.",
+    "storage": "Cure 7-10 days at 15C then store cool, dark, humid.",
+    "timeline": [
+      {"stage": "Planting", "week": "Week 1", "task": "Chit seed potatoes; plant in ridges."},
+      {"stage": "Emergence", "week": "Week 2-4", "task": "Hill soil as shoots grow."},
+      {"stage": "Tuber set", "week": "Week 5-8", "task": "Maintain even soil moisture."},
+      {"stage": "Bulking", "week": "Week 9-12", "task": "Monitor late blight; reduce irrigation late."},
+      {"stage": "Harvest", "week": "Week 13+", "task": "Dig when skins set; dry before storage."}
+    ]
+  },
+  "corn": {
+    "name": "Corn (Maize)",
+    "seasons": ["spring", "summer"],
+    "soils": ["loam", "clay loam", "fertile"],
+    "water": "high",
+    "temp_range": [18, 32],
+    "rainfall_mm": [500, 1000],
+    "fertilizer": "Heavy nitrogen feeder; split N at planting and knee-high stage.",
+    "sowing": "Direct seed when soil >10C; 20-25 cm spacing in blocks for pollination.",
+    "irrigation": "Critical at silking/tasseling; 25-40 mm per week in dry periods.",
+    "pest_care": "Corn earworm, rust; rotate crops; scout lower leaves.",
+    "harvest": "90-120 days; kernels milky when pierced.",
+    "storage": "Dry to 14% moisture for grain; use fresh sweet corn quickly.",
+    "timeline": [
+      {"stage": "Planting", "week": "Week 1", "task": "Plant in blocks; apply starter fertilizer."},
+      {"stage": "Vegetative", "week": "Week 3-6", "task": "Side-dress nitrogen at V6."},
+      {"stage": "Reproductive", "week": "Week 7-10", "task": "Peak water need at pollination."},
+      {"stage": "Maturity", "week": "Week 11+", "task": "Monitor moisture for grain dry-down."}
+    ]
+  },
+  "pepper": {
+    "name": "Bell Pepper",
+    "seasons": ["spring", "summer"],
+    "soils": ["loam", "well-drained"],
+    "water": "medium",
+    "temp_range": [20, 30],
+    "rainfall_mm": [450, 700],
+    "fertilizer": "Moderate N; increase Ca and K during fruit development.",
+    "sowing": "Transplant after frost; warm soil essential.",
+    "irrigation": "Drip irrigation; avoid overhead water to reduce bacterial spot.",
+    "pest_care": "Aphids, bacterial spot; use mulch and crop rotation.",
+    "harvest": "60-90 days; pick when firm and full size.",
+    "storage": "10-12C with high humidity; do not chill below 7C.",
+    "timeline": [
+      {"stage": "Transplant", "week": "Week 1", "task": "Harden off seedlings; transplant to field."},
+      {"stage": "Establishment", "week": "Week 2-5", "task": "Light N; maintain even moisture."},
+      {"stage": "Fruiting", "week": "Week 6-10", "task": "Increase K; harvest regularly to encourage set."}
+    ]
+  },
+  "apple": {
+    "name": "Apple",
+    "seasons": ["perennial", "spring care"],
+    "soils": ["loam", "slightly acidic"],
+    "water": "medium",
+    "temp_range": [10, 25],
+    "rainfall_mm": [600, 1200],
+    "fertilizer": "Annual balanced fertilizer; boron and zinc if deficient.",
+    "sowing": "Plant bare-root trees in dormancy; proper spacing 4-6 m.",
+    "irrigation": "Deep watering young trees weekly in dry spells.",
+    "pest_care": "Scab, fire blight, codling moth; dormant sprays and sanitation.",
+    "harvest": "Variety-dependent; test starch for timing.",
+    "storage": "Controlled atmosphere or cool storage 0-4C.",
+    "timeline": [
+      {"stage": "Dormant", "week": "Late winter", "task": "Prune; apply dormant oil if needed."},
+      {"stage": "Bloom", "week": "Spring", "task": "Protect from frost; monitor scab."},
+      {"stage": "Fruit growth", "week": "Summer", "task": "Thin fruit; irrigate during drought."},
+      {"stage": "Harvest", "week": "Autumn", "task": "Pick at proper maturity index."}
+    ]
+  },
+  "rice": {
+    "name": "Rice",
+    "seasons": ["monsoon", "wet season", "summer"],
+    "soils": ["clay", "paddy", "water-retentive"],
+    "water": "high",
+    "temp_range": [20, 35],
+    "rainfall_mm": [1000, 2000],
+    "fertilizer": "Split N applications; Zn on deficient soils.",
+    "sowing": "Nursery then transplant, or direct seeded in paddies.",
+    "irrigation": "Maintain 5-10 cm standing water in vegetative stage; drain before harvest.",
+    "pest_care": "Stem borer, blast; resistant varieties and water management.",
+    "harvest": "110-140 days; 80-85% grain maturity.",
+    "storage": "Dry to 14% moisture; protect from pests.",
+    "timeline": [
+      {"stage": "Nursery", "week": "Week 1-3", "task": "Raise seedlings; apply starter N."},
+      {"stage": "Transplant", "week": "Week 4", "task": "Transplant 2-3 leaf seedlings."},
+      {"stage": "Tillering", "week": "Week 5-8", "task": "Maintain flood; top-dress N."},
+      {"stage": "Harvest", "week": "Week 16+", "task": "Drain field; combine or hand harvest."}
+    ]
+  },
+  "wheat": {
+    "name": "Wheat",
+    "seasons": ["winter", "cool season"],
+    "soils": ["loam", "clay loam"],
+    "water": "low-medium",
+    "temp_range": [10, 25],
+    "rainfall_mm": [300, 600],
+    "fertilizer": "N at tillering and jointing; P at planting.",
+    "sowing": "Drill seed 3-5 cm deep in moist soil.",
+    "irrigation": "Supplement at critical growth if rainfall low.",
+    "pest_care": "Rust, aphids; monitor flag leaf.",
+    "harvest": "110-130 days; golden straw, hard grain.",
+    "storage": "Dry below 13% moisture.",
+    "timeline": [
+      {"stage": "Germination", "week": "Week 1-2", "task": "Ensure good seed-soil contact."},
+      {"stage": "Tillering", "week": "Week 4-8", "task": "Apply nitrogen if needed."},
+      {"stage": "Heading", "week": "Week 12-16", "task": "Protect from rust; adequate moisture."},
+      {"stage": "Harvest", "week": "Week 18+", "task": "Harvest at 14-20% moisture."}
+    ]
+  },
+  "soybean": {
+    "name": "Soybean",
+    "seasons": ["spring", "summer"],
+    "soils": ["loam", "well-drained"],
+    "water": "medium",
+    "temp_range": [20, 30],
+    "rainfall_mm": [450, 900],
+    "fertilizer": "Inoculate rhizobia; moderate P and K.",
+    "sowing": "Plant when soil >13C; 3-5 cm depth.",
+    "irrigation": "Most critical at flowering and pod fill.",
+    "pest_care": "Aphids, rust; scout R3-R5 stages.",
+    "harvest": "100-130 days; leaves yellow, pods brown.",
+    "storage": "Dry to 13%; aerate bins.",
+    "timeline": [
+      {"stage": "Planting", "week": "Week 1", "task": "Inoculate seed; plant to moisture."},
+      {"stage": "Vegetative", "week": "Week 3-6", "task": "Weed control; nodulation check."},
+      {"stage": "Reproductive", "week": "Week 7-10", "task": "Water stress avoidance at pod fill."},
+      {"stage": "Harvest", "week": "Week 12+", "task": "Combine at proper moisture."}
+    ]
+  },
+  "onion": {
+    "name": "Onion",
+    "seasons": ["cool season", "winter"],
+    "soils": ["sandy loam", "loam"],
+    "water": "medium",
+    "temp_range": [12, 24],
+    "rainfall_mm": [350, 550],
+    "fertilizer": "Moderate N early; reduce N at bulbing; adequate S.",
+    "sowing": "Sets or transplants; shallow planting.",
+    "irrigation": "Even moisture; reduce when tops fall over.",
+    "pest_care": "Thrips, downy mildew; avoid excessive nitrogen late.",
+    "harvest": "90-120 days; neck soft, tops down.",
+    "storage": "Cure 2-3 weeks; cool dry storage.",
+    "timeline": [
+      {"stage": "Establish", "week": "Week 1-4", "task": "Uniform moisture for root growth."},
+      {"stage": "Bulbing", "week": "Week 5-10", "task": "Long days trigger bulbing in many varieties."},
+      {"stage": "Harvest", "week": "Week 12+", "task": "Pull when tops lodge; cure bulbs."}
+    ]
+  },
+  "cucumber": {
+    "name": "Cucumber",
+    "seasons": ["spring", "summer"],
+    "soils": ["loam", "rich organic"],
+    "water": "high",
+    "temp_range": [18, 32],
+    "rainfall_mm": [400, 600],
+    "fertilizer": "Light frequent N; K during fruiting.",
+    "sowing": "Direct seed or transplant after frost.",
+    "irrigation": "Daily drip in hot weather; mulch to conserve moisture.",
+    "pest_care": "Cucumber beetle, powdery mildew; trellis for airflow.",
+    "harvest": "50-70 days; pick frequently for continued yield.",
+    "storage": "Use fresh within 1-2 weeks at 10-12C.",
+    "timeline": [
+      {"stage": "Vine growth", "week": "Week 1-4", "task": "Train on trellis; scout beetles early."},
+      {"stage": "Flowering", "week": "Week 5-7", "task": "Ensure pollination; steady water."},
+      {"stage": "Harvest", "week": "Week 8+", "task": "Harvest every 2-3 days."}
+    ]
+  }
+}

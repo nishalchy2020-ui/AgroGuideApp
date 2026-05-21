@@ -1,0 +1,232 @@
+{
+  "Apple___Apple_scab": {
+    "description": "Fungal disease causing olive-green to dark brown scabby lesions on leaves and fruit.",
+    "symptoms": "Velvety spots on leaves, cracked scabby lesions on fruit, premature leaf drop.",
+    "causes": "Venturia inaequalis fungus spread by rain splash and humid spring weather.",
+    "treatment": "Apply protectant fungicides at green tip through primary infection period; remove fallen leaves.",
+    "prevention": "Plant resistant varieties, prune for airflow, apply dormant copper sprays.",
+    "severity": "high",
+    "pesticide": "Myclobutanil or captan per label during primary scab season.",
+    "organic_solution": "Sulfur or lime-sulfur sprays; rigorous sanitation of leaf litter."
+  },
+  "Apple___Black_rot": {
+    "description": "Fungal disease affecting fruit, leaves, and branches with rot and cankers.",
+    "symptoms": "Brown leaf spots, frog-eye leaf lesions, shriveled mummified fruit.",
+    "causes": "Botryosphaeria obtusa; overwintering in mummified fruit and wood.",
+    "treatment": "Prune infected wood; fungicide sprays from pink bud through cover sprays.",
+    "prevention": "Remove mummies and cankers; maintain tree vigor and balanced nutrition.",
+    "severity": "high",
+    "pesticide": "Thiophanate-methyl or captan in cover spray program.",
+    "organic_solution": "Remove infected debris; copper sprays at dormancy."
+  },
+  "Apple___Cedar_apple_rust": {
+    "description": "Rust disease requiring both apple and cedar/juniper hosts.",
+    "symptoms": "Yellow-orange leaf spots; cup-shaped structures on undersides; fruit lesions.",
+    "causes": "Gymnosporangium juniperi-virginianae; spores from nearby junipers in spring.",
+    "treatment": "Fungicides at pink through early summer; remove nearby junipers if feasible.",
+    "prevention": "Resistant cultivars; avoid planting near eastern red cedar.",
+    "severity": "medium",
+    "pesticide": "Myclobutanil or triadimefon during spore release period.",
+    "organic_solution": "Sulfur sprays; increase distance from juniper hosts."
+  },
+  "Apple___healthy": {
+    "description": "No disease detected; foliage and fruit appear healthy.",
+    "symptoms": "Uniform green leaves, no scab, rot, or rust lesions.",
+    "causes": "Good cultural practices and effective disease management.",
+    "treatment": "Continue monitoring and preventive program.",
+    "prevention": "Balanced nutrition, pruning, sanitation, and timely sprays when needed.",
+    "severity": "low",
+    "pesticide": "Not required.",
+    "organic_solution": "Maintain organic spray schedule only if history of disease pressure."
+  },
+  "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": {
+    "description": "Fungal leaf spots reducing photosynthetic area in corn.",
+    "symptoms": "Rectangular gray-brown lesions between veins; may merge on lower leaves.",
+    "causes": "Cercospora zeae-maydis; crop residue, warm humid weather.",
+    "treatment": "Foliar fungicides if economic threshold reached before tassel.",
+    "prevention": "Crop rotation, tillage of residue, resistant hybrids.",
+    "severity": "medium",
+    "pesticide": "Strobilurin or triazole fungicides per local extension guidelines.",
+    "organic_solution": "Rotation and residue management; limited organic fungicide options in field corn."
+  },
+  "Corn_(maize)___Common_rust_": {
+    "description": "Rust pustules on corn leaves reducing yield in severe cases.",
+    "symptoms": "Small cinnamon-brown pustules on both leaf surfaces.",
+    "causes": "Puccinia sorghi; cool moist conditions favor development.",
+    "treatment": "Fungicide if detected before or at silking in susceptible hybrids.",
+    "prevention": "Plant rust-resistant hybrids; scout early.",
+    "severity": "medium",
+    "pesticide": "Triazole or mixed-mode fungicides when threshold met.",
+    "organic_solution": "Resistant varieties; avoid late planting in high-pressure regions."
+  },
+  "Corn_(maize)___Northern_Leaf_Blight": {
+    "description": "Large elliptical gray-green lesions on corn leaves.",
+    "symptoms": "Cigar-shaped lesions 1–6 inches long; may cause top leaf death.",
+    "causes": "Exserohilum turcicum; infected residue, moderate temperatures, high humidity.",
+    "treatment": "Fungicide application at VT–R1 if disease present and hybrid susceptible.",
+    "prevention": "Resistant hybrids, rotation, residue management.",
+    "severity": "high",
+    "pesticide": "Strobilurin + triazole premix per label.",
+    "organic_solution": "Tillage and rotation; select resistant seed."
+  },
+  "Corn_(maize)___healthy": {
+    "description": "Corn plants show no significant foliar disease.",
+    "symptoms": "Green leaves without characteristic lesion patterns.",
+    "causes": "Effective management and favorable conditions.",
+    "treatment": "Continue scouting through grain fill.",
+    "prevention": "Hybrid selection, rotation, balanced fertility.",
+    "severity": "low",
+    "pesticide": "Not required.",
+    "organic_solution": "Monitor only; maintain soil health."
+  },
+  "Pepper__bell___Bacterial_spot": {
+    "description": "Bacterial disease causing leaf and fruit spots on pepper.",
+    "symptoms": "Small water-soaked spots turning brown; leaf yellowing and defoliation.",
+    "causes": "Xanthomonas species; seedborne, splashing rain, warm humid weather.",
+    "treatment": "Copper-based bactericides; remove severely infected plants.",
+    "prevention": "Use certified seed, avoid overhead irrigation, crop rotation.",
+    "severity": "high",
+    "pesticide": "Copper + mancozeb combinations per label.",
+    "organic_solution": "Copper sprays; hot-water treated seed; resistant varieties."
+  },
+  "Pepper__bell___healthy": {
+    "description": "Pepper plants appear healthy with no bacterial spotting.",
+    "symptoms": "Glossy green leaves and uniform fruit development.",
+    "causes": "Good sanitation and dry foliage management.",
+    "treatment": "Maintain preventive practices.",
+    "prevention": "Drip irrigation, mulch, avoid working wet plants.",
+    "severity": "low",
+    "pesticide": "Not required.",
+    "organic_solution": "Regular scouting; beneficial habitat for natural enemies."
+  },
+  "Potato___Early_blight": {
+    "description": "Common fungal leaf blight on potato and tomato family crops.",
+    "symptoms": "Dark concentric rings (target spots), yellow halo, lower leaf loss.",
+    "causes": "Alternaria solani; stressed plants, alternating warm wet periods.",
+    "treatment": "Protectant and systemic fungicides on schedule after first symptoms.",
+    "prevention": "Adequate nitrogen, mulch, rotation, remove volunteer potatoes.",
+    "severity": "medium",
+    "pesticide": "Chlorothalonil or azoxystrobin rotation programs.",
+    "organic_solution": "Copper or Bacillus subtilis; strengthen plant nutrition."
+  },
+  "Potato___Late_blight": {
+    "description": "Destructive oomycete disease that can destroy fields rapidly.",
+    "symptoms": "Water-soaked lesions, white sporulation on undersides, tuber rot.",
+    "causes": "Phytophthora infestans; cool wet weather, infected seed or volunteers.",
+    "treatment": "Immediate fungicide program; destroy cull piles; harvest timing critical.",
+    "prevention": "Certified seed, hilling, forecast-based sprays, eliminate volunteers.",
+    "severity": "high",
+    "pesticide": "Mandipropamid, fluopicolide, or cymoxanil + protectant per resistance management.",
+    "organic_solution": "Copper hydroxide; strict sanitation; resistant varieties where available."
+  },
+  "Potato___healthy": {
+    "description": "Potato foliage shows no blight or significant spotting.",
+    "symptoms": "Healthy green canopy, normal tuber development.",
+    "causes": "Proactive blight management and dry foliage periods.",
+    "treatment": "Continue late blight monitoring in wet seasons.",
+    "prevention": "Certified seed, good drainage, balanced fertility.",
+    "severity": "low",
+    "pesticide": "Not required unless forecast shows high blight risk.",
+    "organic_solution": "Preventive copper only when regional alerts active."
+  },
+  "Tomato_Bacterial_spot": {
+    "description": "Bacterial disease causing leaf and fruit lesions on tomato.",
+    "symptoms": "Small greasy spots on leaves and fruit; defoliation in severe cases.",
+    "causes": "Xanthomonas spp.; splashing water, contaminated tools and seed.",
+    "treatment": "Copper sprays; remove infected transplants; avoid leaf wetness.",
+    "prevention": "Pathogen-free seed, greenhouse sanitation, drip irrigation.",
+    "severity": "high",
+    "pesticide": "Copper + mancozeb on 7–10 day intervals when wet.",
+    "organic_solution": "Copper bactericides; resistant cultivars; crop rotation."
+  },
+  "Tomato_Early_blight": {
+    "description": "Alternaria leaf blight common in tomato production worldwide.",
+    "symptoms": "Target-like brown lesions, yellowing, defoliation from bottom up.",
+    "causes": "Alternaria solani; crop residue, plant stress, splashing irrigation.",
+    "treatment": "Chlorothalonil or azoxystrobin; remove lower infected leaves.",
+    "prevention": "Stake and prune, mulch, 3-year rotation, balanced nutrition.",
+    "severity": "medium",
+    "pesticide": "Chlorothalonil, mancozeb, or SDHI/strobilurin rotations.",
+    "organic_solution": "Copper, sulfur; compost tea support; resistant varieties."
+  },
+  "Tomato_Late_blight": {
+    "description": "Fast-moving Phytophthora disease affecting tomato leaves and fruit.",
+    "symptoms": "Large irregular brown lesions, white mold in humidity, fruit rot.",
+    "causes": "Phytophthora infestans; cool nights and warm wet days.",
+    "treatment": "Aggressive fungicide program immediately; rogue infected plants.",
+    "prevention": "Monitor forecasts, use tolerant varieties, improve airflow.",
+    "severity": "high",
+    "pesticide": "Oxathiapiprolin or mandipropamid mixes per local guidelines.",
+    "organic_solution": "Copper sprays; destroy infected plants promptly."
+  },
+  "Tomato_Leaf_Mold": {
+    "description": "Fungal disease favored by high humidity especially in greenhouses.",
+    "symptoms": "Yellow patches on upper leaf surface; olive mold on undersides.",
+    "causes": "Passalora fulva (Cladosporium fulvum); poor ventilation, high RH.",
+    "treatment": "Improve ventilation; fungicides on affected foliage.",
+    "prevention": "Dehumidify, resistant cultivars, avoid overhead watering indoors.",
+    "severity": "medium",
+    "pesticide": "Chlorothalonil or difenoconazole in greenhouse programs.",
+    "organic_solution": "Reduce humidity; sulfur where temperature allows."
+  },
+  "Tomato_Septoria_leaf_spot": {
+    "description": "Fungal leaf spot with many small circular lesions.",
+    "symptoms": "Small circular spots with gray centers and dark borders; yellowing.",
+    "causes": "Septoria lycopersici; splashing rain, infected debris.",
+    "treatment": "Protectant fungicides after first symptoms; remove lower leaves.",
+    "prevention": "Mulch, stake plants, rotate away from solanaceae 2+ years.",
+    "severity": "medium",
+    "pesticide": "Chlorothalonil or copper on 7–14 day schedule.",
+    "organic_solution": "Copper; remove infected lower leaves; crop rotation."
+  },
+  "Tomato_Spider_mites_Two_spotted_spider_mite": {
+    "description": "Arachnid pest causing stippling and bronzing of tomato leaves.",
+    "symptoms": "Fine stippling, webbing on undersides, leaf bronzing and drop.",
+    "causes": "Tetranychus urticae; hot dry conditions, dust, lack of predators.",
+    "treatment": "Miticides or horticultural oil; increase humidity slightly if possible.",
+    "prevention": "Avoid over-fertilization with nitrogen; release predatory mites in greenhouses.",
+    "severity": "medium",
+    "pesticide": "Abamectin or spiromesifen per label; rotate modes of action.",
+    "organic_solution": "Insecticidal soap, neem oil, predatory Phytoseiulus mites."
+  },
+  "Tomato__Target_Spot": {
+    "description": "Fungal leaf disease with concentric target-like lesions.",
+    "symptoms": "Brown lesions with concentric rings on leaves and sometimes fruit.",
+    "causes": "Corynespora cassiicola; warm humid conditions, crop debris.",
+    "treatment": "Fungicides when disease appears early in canopy.",
+    "prevention": "Rotation, debris removal, greenhouse humidity control.",
+    "severity": "medium",
+    "pesticide": "Azoxystrobin or boscalid-containing products.",
+    "organic_solution": "Sanitation; copper where permitted; airflow improvement."
+  },
+  "Tomato__Tomato_YellowLeaf__Curl_Virus": {
+    "description": "Virus disease transmitted by whiteflies causing severe stunting.",
+    "symptoms": "Upward leaf curl, yellowing, stunted growth, reduced fruit set.",
+    "causes": "Begomovirus; Bemisia tabaci whitefly transmission.",
+    "treatment": "No cure—remove infected plants; control whitefly vectors.",
+    "prevention": "Reflective mulches, resistant varieties, insect-proof nets, vector control.",
+    "severity": "high",
+    "pesticide": "Imidacloprid or spirotetramat for whitefly per IPM guidelines.",
+    "organic_solution": "Yellow sticky traps, neem, reflective mulch, rogue infected plants."
+  },
+  "Tomato__Tomato_mosaic_virus": {
+    "description": "Viral disease causing mosaic patterns and distorted leaves.",
+    "symptoms": "Mottled light and dark green leaves, fern-leaf distortion, stunting.",
+    "causes": "Tomato mosaic virus; mechanical spread on hands and tools.",
+    "treatment": "No cure—remove infected plants; disinfect tools with 10% bleach.",
+    "prevention": "TMV-resistant varieties, hand washing, no smoking near plants.",
+    "severity": "high",
+    "pesticide": "Not applicable for virus; focus on prevention.",
+    "organic_solution": "Resistant seed; strict hygiene; destroy infected material."
+  },
+  "Tomato_healthy": {
+    "description": "Tomato plants appear healthy with vigorous green foliage.",
+    "symptoms": "No characteristic disease lesions or virus symptoms.",
+    "causes": "Good IPM, hygiene, and environmental management.",
+    "treatment": "Continue regular scouting and preventive care.",
+    "prevention": "Mulch, stake, drip irrigate, rotate crops, use clean seed.",
+    "severity": "low",
+    "pesticide": "Not required.",
+    "organic_solution": "Support beneficial insects; maintain balanced soil fertility."
+  }
+}

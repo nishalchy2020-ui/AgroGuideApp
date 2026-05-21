@@ -1,0 +1,41 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Cultivation Guide{% endblock %}
+{% block content %}
+<form method="post" class="card max-w-md mb-6 flex gap-3">
+  <select name="crop_name" class="input flex-1" required>
+    <option value="">Select crop</option>
+    {% for name, key in crops %}<option value="{{ key }}" {% if crop_sel == key %}selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn-primary" data-loading>{{ icon('book-open', 'w-4 h-4') }} Load guide</button>
+</form>
+
+{% if guide %}
+<div class="grid lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-4">
+    <div class="glass-card"><h3 class="font-bold text-xl mb-4">{{ guide.crop_name }} cultivation</h3>
+      <div class="grid sm:grid-cols-2 gap-4 text-sm">
+        <div><span class="text-slate-500">Best season</span><p class="font-medium">{{ guide.best_season }}</p></div>
+        <div><span class="text-slate-500">Soil</span><p class="font-medium">{{ guide.soil_requirement }}</p></div>
+        <div><span class="text-slate-500">Water</span><p class="font-medium">{{ guide.water_requirement }}</p></div>
+        <div><span class="text-slate-500">Harvest</span><p class="font-medium">{{ guide.harvesting_period }}</p></div>
+      </div>
+    </div>
+    {% for title, content in [('Fertilizer', guide.fertilizer_requirement), ('Sowing', guide.sowing_method), ('Irrigation', guide.irrigation_schedule), ('Pest care', guide.pest_care), ('Storage', guide.storage_tips)] %}
+    <div class="card"><h4 class="font-semibold mb-2">{{ title }}</h4><p class="text-sm text-slate-600 dark:text-slate-400">{{ content }}</p></div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h4 class="font-semibold mb-4 flex items-center gap-2">{{ icon('calendar', 'w-4 h-4') }} Timeline</h4>
+    {% for step in guide.timeline %}
+    <div class="timeline-item">
+      <p class="text-xs text-agro-600 font-semibold">{{ step.week }} · {{ step.stage }}</p>
+      <p class="text-sm mt-1">{{ step.task }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/loaders.js') }}"></script>{% endblock %}

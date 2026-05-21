@@ -1,0 +1,40 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Crop Recommendation{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-2 gap-6">
+  <form method="post" class="card space-y-4" id="reco-form">
+    <div><label class="label">Soil type</label><select name="soil_type" class="input" required>{% for s in soils %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Season</label><select name="season" class="input" required>{% for s in seasons %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Water availability</label><select name="water_availability" class="input" required>{% for w in water_levels %}<option value="{{ w }}">{{ w|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Temperature (C)</label><input type="number" step="0.1" name="temperature" class="input" placeholder="e.g. 24" required></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="label">Rainfall (mm, optional)</label><input type="number" name="rainfall" class="input"></div>
+      <div><label class="label">Humidity % (optional)</label><input type="number" name="humidity" class="input"></div>
+    </div>
+    <button type="submit" class="btn-primary w-full" data-loading>{{ icon('sparkles', 'w-4 h-4') }} Get recommendations</button>
+  </form>
+
+  <div class="space-y-4">
+    {% if result %}
+    {% for rec in result.recommendations %}
+    <div class="glass-card">
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="font-bold text-lg">{{ rec.crop_name }}</h3>
+        <span class="text-agro-600 font-bold">{{ rec.score }}%</span>
+      </div>
+      <ul class="text-sm text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
+        {% for r in rec.reasons[:3] %}<li>{{ r }}</li>{% endfor %}
+      </ul>
+      {% if rec.tips %}
+      <p class="text-xs mt-3 text-slate-500"><strong>Tips:</strong> {{ rec.tips[0] }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card text-slate-500 text-sm">{{ icon('info', 'w-5 h-5 inline') }} Enter your field conditions to receive ranked crop recommendations.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/loaders.js') }}"></script>{% endblock %}

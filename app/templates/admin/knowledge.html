@@ -1,0 +1,40 @@
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Disease Knowledge{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-2 gap-6">
+  <div class="card max-h-[70vh] overflow-y-auto">
+    <h2 class="font-semibold mb-4">Classes</h2>
+    <ul class="space-y-1 text-sm">
+      {% for r in records %}
+      <li><a href="{{ url_for('admin.knowledge', edit=r.class_name) }}" class="{% if edit_record and edit_record.class_name == r.class_name %}text-agro-600 font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:text-agro-600{% endif %}">{{ r.class_name }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% if edit_record %}
+  <div class="card">
+    <h2 class="font-semibold mb-4">Edit: {{ edit_record.class_name }}</h2>
+    <form method="post" class="space-y-3">
+      <input type="hidden" name="class_name" value="{{ edit_record.class_name }}">
+      <div><label class="label">Description</label><textarea name="description" rows="2" class="input">{{ edit_record.description }}</textarea></div>
+      <div><label class="label">Symptoms</label><textarea name="symptoms" rows="2" class="input">{{ edit_record.symptoms }}</textarea></div>
+      <div><label class="label">Causes</label><textarea name="causes" rows="2" class="input">{{ edit_record.causes }}</textarea></div>
+      <div><label class="label">Treatment</label><textarea name="treatment" rows="2" class="input">{{ edit_record.treatment }}</textarea></div>
+      <div><label class="label">Prevention</label><textarea name="prevention" rows="2" class="input">{{ edit_record.prevention }}</textarea></div>
+      <div><label class="label">Pesticide</label><textarea name="pesticide" rows="2" class="input">{{ edit_record.pesticide }}</textarea></div>
+      <div><label class="label">Organic solution</label><textarea name="organic_solution" rows="2" class="input">{{ edit_record.organic_solution }}</textarea></div>
+      <div>
+        <label class="label">Severity</label>
+        <select name="severity" class="input">
+          {% for s in ['low','medium','high'] %}
+          <option value="{{ s }}" {% if edit_record.severity == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn-primary">Save changes</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="card text-slate-500 text-sm">Select a class to edit knowledge base entries.</div>
+  {% endif %}
+</div>
+{% endblock %}

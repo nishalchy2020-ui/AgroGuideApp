@@ -1,0 +1,50 @@
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Admin Panel{% endblock %}
+{% block content %}
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="stat-card"><p class="text-sm text-slate-500">Users</p><p class="text-3xl font-bold">{{ total_users }}</p></div>
+  <div class="stat-card"><p class="text-sm text-slate-500">Total Scans</p><p class="text-3xl font-bold">{{ total_scans }}</p></div>
+  <div class="stat-card"><p class="text-sm text-slate-500">Knowledge</p><a href="{{ url_for('admin.knowledge') }}" class="text-agro-600 font-semibold">Manage →</a></div>
+  <div class="stat-card"><p class="text-sm text-slate-500">Users list</p><a href="{{ url_for('admin.users') }}" class="text-agro-600 font-semibold">View →</a></div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+  <div class="card">
+    <h2 class="font-semibold mb-4">Common diseases detected</h2>
+    {% if top_diseases %}
+    <ul class="space-y-2">
+      {% for name, count in top_diseases %}
+      <li class="flex justify-between text-sm"><span class="truncate">{{ name }}</span><span class="font-semibold text-agro-600">{{ count }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-slate-500 text-sm">No scan data yet.</p>
+    {% endif %}
+  </div>
+  <div class="card">
+    <h2 class="font-semibold mb-4">Recent uploads</h2>
+    <div class="space-y-2 text-sm">
+      {% for scan in recent_scans %}
+      <div class="flex justify-between border-b dark:border-slate-800 pb-2">
+        <span>{{ scan.disease_label }}</span>
+        <span class="text-slate-500">{{ scan.created_at.strftime('%m/%d') }}</span>
+      </div>
+      {% else %}
+      <p class="text-slate-500">No recent scans.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card mt-6">
+  <h2 class="font-semibold mb-4">Analytics (scan distribution)</h2>
+  <canvas id="admin-chart" height="120"></canvas>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const labels = [{% for name, count in top_diseases %}"{{ name|e }}"{% if not loop.last %},{% endif %}{% endfor %}];
+  const data = [{% for name, count in top_diseases %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}];
+</script>
+<script src="{{ url_for('static', filename='js/admin-chart.js') }}"></script>
+{% endblock %}

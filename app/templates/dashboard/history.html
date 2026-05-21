@@ -1,0 +1,52 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}History{% endblock %}
+{% block content %}
+<div class="card mb-6">
+  <form method="get" class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+    <div class="lg:col-span-2">
+      <label class="label">Search</label>
+      <input type="text" name="q" value="{{ q }}" class="input" placeholder="Search titles...">
+    </div>
+    <div>
+      <label class="label">Module</label>
+      <select name="module" class="input">
+        <option value="">All modules</option>
+        {% for key, label in modules.items() %}
+        <option value="{{ key }}" {% if module_filter == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="label">From</label>
+      <input type="date" name="date_from" value="{{ date_from }}" class="input">
+    </div>
+    <div>
+      <label class="label">To</label>
+      <input type="date" name="date_to" value="{{ date_to }}" class="input">
+    </div>
+    <button type="submit" class="btn-primary">{{ icon('search', 'w-4 h-4') }} Filter</button>
+  </form>
+</div>
+
+<div class="space-y-3">
+  {% for item in items %}
+  <div class="glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <p class="font-semibold">{{ item.title }}</p>
+      <p class="text-xs text-slate-500 mt-1">{{ item.module_label }} · {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    </div>
+    <form method="post" onsubmit="return confirm('Delete this history item?');">
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="item_id" value="{{ item.id }}">
+      <button type="submit" class="btn-secondary text-red-500">{{ icon('trash-2', 'w-4 h-4') }} Delete</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="card text-center text-slate-500 py-12">
+    {{ icon('inbox', 'w-12 h-12 mx-auto mb-3 opacity-40') }}
+    <p>No history found for your filters.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

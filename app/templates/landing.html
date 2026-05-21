@@ -1,0 +1,90 @@
+{% from "partials/icon.html" import icon %}
+{% extends "base.html" %}
+{% block title %}AgroGuide — Smart Farming Platform{% endblock %}
+{% block body %}
+<nav class="glass-header sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-agro-500 to-agro-700 flex items-center justify-center text-white shadow-lg">
+        {{ icon('leaf', 'w-5 h-5 text-white') }}
+      </div>
+      <span class="font-bold text-xl tracking-tight">AgroGuide</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="theme-toggle" type="button" class="p-2 rounded-xl glass-btn" aria-label="Theme">{{ icon('sun-moon', 'w-5 h-5') }}</button>
+      <a href="{{ url_for('auth.login') }}" class="text-sm font-medium hover:text-agro-600 hidden sm:inline">Log in</a>
+      <a href="{{ url_for('auth.register') }}" class="btn-primary text-sm">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<section class="relative overflow-hidden py-20 lg:py-28">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
+    <div class="page-enter">
+      <p class="text-agro-600 dark:text-agro-400 font-semibold text-sm uppercase tracking-widest mb-4">Production-ready AgriTech SaaS</p>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+        Intelligent farming decisions in one dashboard
+      </h1>
+      <p class="text-lg text-slate-600 dark:text-slate-400 mt-6 max-w-xl">
+        AI disease detection, crop planning, weather intelligence, irrigation and fertilizer guidance—built for modern growers.
+      </p>
+      <div class="flex flex-wrap gap-4 mt-10">
+        <a href="{{ url_for('auth.register') }}" class="btn-primary px-8 py-3" id="hero-cta">{{ icon('arrow-right', 'w-4 h-4') }} Start free</a>
+        <a href="{{ url_for('auth.login') }}" class="btn-secondary px-8 py-3">Sign in</a>
+      </div>
+      <div class="flex gap-8 mt-12 text-sm">
+        <div><p class="text-2xl font-bold text-agro-600">23+</p><p class="text-slate-500">Disease classes</p></div>
+        <div><p class="text-2xl font-bold text-agro-600">9</p><p class="text-slate-500">Farm modules</p></div>
+        <div><p class="text-2xl font-bold text-agro-600">1</p><p class="text-slate-500">Unified history</p></div>
+      </div>
+    </div>
+    <div class="glass-card p-6 lg:p-8 page-enter hidden lg:block">
+      <div class="grid grid-cols-2 gap-4">
+        {% for label, ic in [('Disease AI', 'scan'), ('Crop planner', 'sprout'), ('Weather', 'cloud-sun'), ('Gemini AI', 'bot')] %}
+        <div class="p-4 rounded-xl bg-white/50 dark:bg-slate-800/40 border border-white/30">
+          {{ icon(ic, 'w-8 h-8 text-agro-600 mb-2') }}
+          <p class="font-semibold text-sm">{{ label }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+  <h2 class="text-2xl font-bold text-center mb-10">Everything your farm needs</h2>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for title, desc, ic in [
+      ('AI Disease Detection', 'MobileNetV2 leaf analysis with treatment guides and severity scoring.', 'scan'),
+      ('Crop Recommendation', 'Soil, season, and climate-based crop ranking with suitability scores.', 'sprout'),
+      ('Cultivation Guides', 'Timeline-based sowing, irrigation, pest, and harvest instructions.', 'book-open'),
+      ('Weather Intelligence', 'Open-Meteo forecasts with disease risk and farming advice.', 'cloud-sun'),
+      ('Irrigation & Fertilizer', 'Stage-aware water and nutrient recommendations.', 'droplets'),
+      ('Gemini Farm Assistant', 'Google Gemini-powered chat for practical field questions.', 'message-circle')
+    ] %}
+    <div class="glass-card hover:scale-[1.02] transition-transform">
+      <div class="w-11 h-11 rounded-xl bg-agro-500/15 flex items-center justify-center text-agro-600 mb-4">{{ icon(ic, 'w-5 h-5') }}</div>
+      <h3 class="font-semibold text-lg mb-2">{{ title }}</h3>
+      <p class="text-sm text-slate-600 dark:text-slate-400">{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+  <div class="glass-card p-8 lg:p-12 text-center">
+    <h2 class="text-2xl font-bold mb-4">How it works</h2>
+    <div class="grid md:grid-cols-3 gap-8 mt-8 text-left">
+      <div><span class="text-agro-600 font-bold">01</span><h3 class="font-semibold mt-2">Create account</h3><p class="text-sm text-slate-500 mt-1">Register and access your personal farm dashboard.</p></div>
+      <div><span class="text-agro-600 font-bold">02</span><h3 class="font-semibold mt-2">Run analysis</h3><p class="text-sm text-slate-500 mt-1">Upload leaf images, check crops, or ask the AI assistant.</p></div>
+      <div><span class="text-agro-600 font-bold">03</span><h3 class="font-semibold mt-2">Track history</h3><p class="text-sm text-slate-500 mt-1">Every result saved with search, filters, and export-ready records.</p></div>
+    </div>
+    <a href="{{ url_for('auth.register') }}" class="btn-primary mt-10 inline-flex">Create your account</a>
+  </div>
+</section>
+
+<footer class="border-t border-slate-200/50 dark:border-slate-800 py-10 text-center text-sm text-slate-500">
+  <p>AgroGuide — English-only smart farming dashboard. Flask · PyTorch · Gemini · Open-Meteo.</p>
+</footer>
+{% include "partials/flash.html" %}
+{% endblock %}

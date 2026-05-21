@@ -1,0 +1,42 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Crop Suitability{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-2 gap-6">
+  <form method="post" class="card space-y-4">
+    <div><label class="label">Crop</label><select name="crop_name" class="input" required><option value="">Select crop</option>{% for name, key in crops %}<option value="{{ key }}">{{ name }}</option>{% endfor %}</select></div>
+    <div><label class="label">Soil type</label><select name="soil_type" class="input" required>{% for s in soils %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Season</label><select name="season" class="input" required>{% for s in seasons %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Water availability</label><select name="water_availability" class="input" required>{% for w in water_levels %}<option value="{{ w }}">{{ w|title }}</option>{% endfor %}</select></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="label">Temperature (C)</label><input type="number" name="temperature" class="input"></div>
+      <div><label class="label">Humidity %</label><input type="number" name="humidity" class="input"></div>
+    </div>
+    <div><label class="label">Location (optional)</label><input type="text" name="location" class="input" placeholder="Farm region"></div>
+    <button type="submit" class="btn-primary w-full" data-loading>{{ icon('check-circle', 'w-4 h-4') }} Analyze suitability</button>
+  </form>
+
+  {% if result %}
+  <div class="card text-center">
+    <div class="score-ring mx-auto mb-4" style="--pct: {{ result.score }}%">
+      <span class="text-agro-600">{{ result.score }}%</span>
+    </div>
+    <h3 class="text-xl font-bold">{{ result.crop_name }}</h3>
+    <span class="inline-block mt-2 px-4 py-1 rounded-full text-sm font-semibold
+      {% if result.status == 'suitable' %}badge-low{% elif result.status == 'moderate' %}badge-medium{% else %}badge-high{% endif %}">
+      {{ result.label }}
+    </span>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mt-4 text-left">{{ result.explanation }}</p>
+    <div class="mt-4 text-left">
+      <h4 class="font-semibold text-sm mb-2">Improvement suggestions</h4>
+      <ul class="text-sm space-y-1 list-disc list-inside text-slate-500">
+        {% for s in result.suggestions %}<li>{{ s }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% else %}
+  <div class="card text-slate-500 text-sm">Select a crop and conditions to see suitability analysis.</div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/loaders.js') }}"></script>{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Weather & Farm Advice{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-3 gap-6">
+  <div class="card lg:col-span-1">
+    <h2 class="font-semibold mb-4">Search location</h2>
+    <form method="post" class="space-y-3">
+      <input type="text" name="location" class="input" placeholder="City, region, or country" required>
+      <button type="submit" class="btn-primary w-full">Get Weather</button>
+    </form>
+    {% if history %}
+    <div class="mt-6">
+      <p class="text-xs text-slate-500 uppercase mb-2">Recent</p>
+      <ul class="text-sm space-y-1">
+        {% for h in history %}
+        <li class="text-slate-600 dark:text-slate-400">{{ h.location_name }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="lg:col-span-2 space-y-4">
+    {% if weather_data and location %}
+    {% set c = weather_data.current %}
+    <div class="grid sm:grid-cols-4 gap-4">
+      <div class="stat-card"><p class="text-xs text-slate-500">Temperature</p><p class="text-2xl font-bold">{{ c.temperature_2m }}°C</p></div>
+      <div class="stat-card"><p class="text-xs text-slate-500">Humidity</p><p class="text-2xl font-bold">{{ c.relative_humidity_2m }}%</p></div>
+      <div class="stat-card"><p class="text-xs text-slate-500">Wind</p><p class="text-2xl font-bold">{{ c.wind_speed_10m }} km/h</p></div>
+      <div class="stat-card"><p class="text-xs text-slate-500">Rainfall</p><p class="text-2xl font-bold">{{ c.precipitation or 0 }} mm</p></div>
+    </div>
+    <div class="card">
+      <h3 class="font-semibold">{{ location.name }}{% if location.country %}, {{ location.country }}{% endif %}</h3>
+      <p class="text-sm text-slate-500 mt-1">Powered by Open-Meteo</p>
+    </div>
+    <div class="card"><h3 class="font-semibold mb-2">Farming advice</h3><p class="text-sm">{{ advice }}</p></div>
+    {% if risk %}
+    <div class="card border-l-4 {% if risk.level == 'High' %}border-red-500{% elif risk.level == 'Moderate' %}border-amber-500{% else %}border-agro-500{% endif %}">
+      <h3 class="font-semibold mb-2">Disease risk: {{ risk.level }}</h3>
+      <p class="text-sm">{{ risk.message }}</p>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="card text-slate-500 text-sm">Enter a location to view weather, farming advice, and disease risk warnings.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

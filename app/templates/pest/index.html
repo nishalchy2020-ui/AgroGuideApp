@@ -1,0 +1,33 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Pest & Disease Help{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-2 gap-6">
+  <form method="post" class="card space-y-4">
+    <div><label class="label">Crop</label><select name="crop_name" class="input" required>{% for name, key in crops %}<option value="{{ key }}">{{ name }}</option>{% endfor %}</select></div>
+    <div><label class="label">Visible symptom</label>
+      <select name="symptom" class="input" required>
+        {% for s in symptoms %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-primary w-full" data-loading>{{ icon('bug', 'w-4 h-4') }} Diagnose symptom</button>
+  </form>
+  {% if result %}
+  <div class="space-y-4">
+    <div class="glass-card">
+      <h3 class="font-bold text-lg">{{ result.possible_issue }}</h3>
+      <p class="text-sm text-slate-500 mt-1">{{ result.crop_name }} · {{ result.symptom }}</p>
+      <div class="mt-4 space-y-3 text-sm">
+        <div><strong>Cause:</strong> {{ result.likely_cause }}</div>
+        <div><strong>Treatment:</strong> {{ result.treatment }}</div>
+        <div><strong>Prevention:</strong> {{ result.prevention }}</div>
+      </div>
+    </div>
+    <a href="{{ detection_url }}" class="btn-primary inline-flex">{{ icon('scan', 'w-4 h-4') }} Confirm with AI leaf scan</a>
+  </div>
+  {% else %}
+  <div class="card text-slate-500 text-sm">Symptom-based guidance before image confirmation.</div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/loaders.js') }}"></script>{% endblock %}

@@ -1,0 +1,57 @@
+{% from "partials/icon.html" import icon %}
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}AgroGuide AI{% endblock %}
+{% block content %}
+{% if not search_configured %}
+<div class="mb-4 p-4 rounded-xl glass-card border border-amber-500/30 text-amber-800 dark:text-amber-200 text-sm flex gap-2">
+  {{ icon('alert-triangle', 'w-5 h-5 shrink-0') }}
+  <span>SEARCH_API_KEY is not set. AgroGuide will answer from local knowledge and fallback guidance only.</span>
+</div>
+{% endif %}
+<div class="max-w-4xl mx-auto flex flex-col h-[calc(100vh-11rem)] overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-soft">
+  <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200/70 dark:border-slate-700/70">
+    <div>
+      <h2 class="font-bold text-slate-900 dark:text-white">AgroGuide AI</h2>
+      <p class="text-xs text-slate-500">Local knowledge first{% if search_configured %}, {{ search_provider|title }} internet search when needed{% endif %}</p>
+    </div>
+    <button type="button" id="clear-chat" class="btn-secondary text-sm" {% if not messages %}disabled{% endif %}>
+      {{ icon('trash-2', 'w-4 h-4') }} Clear history
+    </button>
+  </div>
+
+  <div id="chat-messages" class="flex-1 overflow-y-auto space-y-4 p-5">
+    {% for msg in messages %}
+    <div class="chat-row group flex gap-2 {% if msg.role == 'user' %}justify-end{% endif %}" data-message-id="{{ msg.id }}">
+      <div class="max-w-[85%]">
+        <div class="flex items-center gap-2 mb-1 {% if msg.role == 'user' %}justify-end{% endif %}">
+          {% if msg.role != 'user' %}
+          <span class="source-badge text-[11px] px-2 py-0.5 rounded-full border {% if msg.source_type == 'internet' %}border-sky-400/50 text-sky-700 dark:text-sky-300{% elif msg.source_type == 'fallback' %}border-amber-400/50 text-amber-700 dark:text-amber-300{% else %}border-emerald-400/50 text-emerald-700 dark:text-emerald-300{% endif %}">
+            {% if msg.source_type == 'internet' %}Internet Result{% elif msg.source_type == 'fallback' %}Fallback{% else %}Local Knowledge{% endif %}
+          </span>
+          {% endif %}
+          <button type="button" class="delete-message opacity-70 hover:opacity-100 text-slate-400 hover:text-red-500" data-message-id="{{ msg.id }}" title="Delete message">
+            {{ icon('trash-2', 'w-3.5 h-3.5') }}
+          </button>
+        </div>
+        <div class="whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed {% if msg.role == 'user' %}bg-agro-600 text-white{% else %}glass-card{% endif %}">
+          {{ msg.display_message }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not messages %}
+    <p class="text-center text-slate-500 text-sm py-8">Ask about crops, irrigation, fertilizer, pests, or plant diseases.</p>
+    {% endif %}
+    <div id="typing-indicator" class="hidden">
+      <div class="glass-card inline-flex px-4 py-3 typing-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+  <form id="chat-form" class="flex gap-2 border-t border-slate-200/70 dark:border-slate-700/70 p-4">
+    <input type="text" id="chat-input" class="input flex-1" placeholder="Ask about crops, fertilizer, pests, irrigation, weather risks, or AgroGuide..." autocomplete="off">
+    <button type="submit" id="chat-send" class="btn-primary">{{ icon('send', 'w-4 h-4') }}</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+{% endblock %}

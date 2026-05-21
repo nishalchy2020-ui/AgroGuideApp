@@ -1,0 +1,25 @@
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Scan Result{% endblock %}
+{% block content %}
+<div class="grid lg:grid-cols-3 gap-6">
+  <div class="card lg:col-span-1">
+    <img src="{{ image_url }}" alt="Scanned plant" class="w-full rounded-xl object-cover mb-4">
+    <h2 class="text-xl font-bold">{{ scan.disease_label }}</h2>
+    <p class="text-3xl font-bold text-agro-600 mt-2">{{ (scan.confidence * 100)|round(2) }}%</p>
+    <p class="text-sm text-slate-500">confidence</p>
+    <span class="inline-block mt-4 px-3 py-1 rounded-full text-sm font-medium {{ badge_class }}">{{ scan.severity|upper }} severity</span>
+  </div>
+  <div class="lg:col-span-2 space-y-4">
+    <div class="card"><h3 class="font-semibold mb-2">Overview</h3><p class="text-sm text-slate-600 dark:text-slate-400">{{ knowledge.description }}</p></div>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div class="card"><h3 class="font-semibold mb-2">Symptoms</h3><p class="text-sm text-slate-600 dark:text-slate-400">{{ knowledge.symptoms }}</p></div>
+      <div class="card"><h3 class="font-semibold mb-2">Causes</h3><p class="text-sm text-slate-600 dark:text-slate-400">{{ knowledge.causes }}</p></div>
+      <div class="card"><h3 class="font-semibold mb-2">Treatment</h3><p class="text-sm text-slate-600 dark:text-slate-400">{{ knowledge.treatment }}</p></div>
+      <div class="card"><h3 class="font-semibold mb-2">Prevention</h3><p class="text-sm text-slate-600 dark:text-slate-400">{{ knowledge.prevention }}</p></div>
+      <div class="card"><h3 class="font-semibold mb-2">Recommended pesticide</h3><p class="text-sm text-slate-600 dark:text-slate-400">{{ knowledge.pesticide }}</p></div>
+      <div class="card"><h3 class="font-semibold mb-2">Organic alternative</h3><p class="text-sm text-slate-600 dark:text-slate-400">{{ knowledge.organic_solution }}</p></div>
+    </div>
+    <a href="{{ url_for('detection.index') }}" class="btn-primary inline-block">New scan</a>
+  </div>
+</div>
+{% endblock %}

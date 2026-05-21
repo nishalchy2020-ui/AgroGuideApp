@@ -1,0 +1,19 @@
+{% extends "partials/dashboard_layout.html" %}
+{% block page_title %}Users{% endblock %}
+{% block content %}
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left text-slate-500 border-b dark:border-slate-700"><th class="pb-2">Name</th><th>Email</th><th>Admin</th><th>Joined</th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr class="border-b dark:border-slate-800">
+        <td class="py-3">{{ u.name }}</td>
+        <td>{{ u.email }}</td>
+        <td>{% if u.is_admin %}Yes{% else %}—{% endif %}</td>
+        <td class="text-slate-500">{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
