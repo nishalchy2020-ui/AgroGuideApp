@@ -1,3 +1,5 @@
+import base64
+import mimetypes
 import os
 import requests
 
@@ -42,6 +44,28 @@ def predict_with_remote_api(file):
 
     response.raise_for_status()
     return response.json()
+
+
+def normalize_confidence_percent(value):
+    """Return confidence as a display-ready percentage in the 0-100 range."""
+    if isinstance(value, str):
+        value = value.strip().rstrip("%")
+
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+    if confidence <= 1:
+        confidence *= 100
+
+    return max(0.0, min(confidence, 100.0))
+
+
+def image_data_url(path):
+    content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{content_type};base64,{encoded}"
 
 
 @detection_bp.route("/")
@@ -101,12 +125,9 @@ def predict():
         flash("AI API did not return a disease class.", "error")
         return redirect(url_for("detection.index"))
 
-    confidence = result.get("confidence", 0)
-
-    try:
-        confidence = float(confidence)
-    except (TypeError, ValueError):
-        confidence = 0.0
+    confidence = normalize_confidence_percent(
+        result.get("confidence_percent", result.get("confidence", 0))
+    )
 
     knowledge = get_knowledge_for_class(class_name)
     label = humanize_class_name(class_name)
@@ -143,6 +164,8 @@ def predict():
         scan=scan,
         knowledge=knowledge,
         badge_class=severity_badge_class(severity),
+        confidence_percent=normalize_confidence_percent(scan.confidence),
+        image_src=image_data_url(path),
         image_url=url_for("main.serve_upload", filename=filename),
     )
 
@@ -163,5 +186,7 @@ def result_detail(scan_id):
         scan=scan,
         knowledge=knowledge,
         badge_class=severity_badge_class(scan.severity),
+        confidence_percent=normalize_confidence_percent(scan.confidence),
+        image_src=None,
         image_url=url_for("main.serve_upload", filename=scan.image_filename),
     )
