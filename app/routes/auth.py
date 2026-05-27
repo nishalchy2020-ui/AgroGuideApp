@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -35,6 +35,7 @@ def register():
             )
             db.session.add(user)
             db.session.commit()
+            session.permanent = True
             login_user(user)
             flash("Welcome to AgroGuide!", "success")
             return redirect(url_for("main.dashboard"))
@@ -53,6 +54,7 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password_hash, password):
+            session.permanent = True
             login_user(user, remember=bool(request.form.get("remember")))
             next_page = request.args.get("next")
             flash("Logged in successfully.", "success")

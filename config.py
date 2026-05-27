@@ -5,6 +5,7 @@ Copy .env.example to .env and set your values. Never commit .env to version cont
 """
 import os
 import warnings
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -68,6 +69,15 @@ class Config:
         else f"sqlite:///{BASE_DIR / 'agroguide.db'}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    PERMANENT_SESSION_LIFETIME = timedelta(
+        days=getenv_int("SESSION_LIFETIME_DAYS", 30)
+    )
+    REMEMBER_COOKIE_DURATION = timedelta(
+        days=getenv_int("REMEMBER_COOKIE_DAYS", 30)
+    )
+    REMEMBER_COOKIE_REFRESH_EACH_REQUEST = True
+    SESSION_REFRESH_EACH_REQUEST = True
 
     # Uploaded files must also use /tmp on Vercel.
     UPLOAD_FOLDER = Path(
