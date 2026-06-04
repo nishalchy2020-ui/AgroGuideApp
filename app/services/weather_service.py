@@ -7,14 +7,16 @@ from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 TRANSIENT_STATUS_CODES = (502, 503, 504)
+MET_LOCATIONFORECAST_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+MET_USER_AGENT = "AgroGuideApp/1.0"
 
 
 class WeatherServiceError(Exception):
     """User-facing weather service error."""
 
 
-def _get_json(url: str, params: dict):
-    logger.info("Requesting Open-Meteo API: %s params=%s", url, params)
+def _get_json(url: str, params: dict, headers: dict | None = None):
+    logger.info("Requesting weather API: %s params=%s", url, params)
     session = requests.Session()
     retries = Retry(
         total=3,
@@ -24,16 +26,16 @@ def _get_json(url: str, params: dict):
     )
     session.mount("https://", HTTPAdapter(max_retries=retries))
     try:
-        resp = session.get(url, params=params, timeout=10)
+        resp = session.get(url, params=params, headers=headers, timeout=10)
         resp.raise_for_status()
         return resp.json()
     except requests.exceptions.RequestException as exc:
-        logger.exception("Open-Meteo API request failed: %s params=%s", url, params)
+        logger.exception("Weather API request failed: %s params=%s", url, params)
         raise WeatherServiceError(
             "Unable to load weather data right now. Please try again later."
         ) from exc
     except ValueError as exc:
-        logger.exception("Open-Meteo API returned invalid JSON: %s params=%s", url, params)
+        logger.exception("Weather API returned invalid JSON: %s params=%s", url, params)
         raise WeatherServiceError(
             "Weather data could not be read. Please try again later."
         ) from exc
@@ -47,17 +49,58 @@ def geocode_location(query: str):
 
 
 def fetch_weather(latitude: float, longitude: float):
-    params = {
+    params = {"lat": round(float(latitude), 4), "lon": round(float(longitude), 4)}
+    data = _get_json(
+        MET_LOCATIONFORECAST_URL,
+        params,
+        headers={"User-Agent": MET_USER_AGENT},
+    )
+
+    try:
+        forecast = data["properties"]["timeseries"][0]
+        details = forecast["data"]["instant"]["details"]
+        rain = (
+            forecast["data"]
+            .get("next_1_hours", {})
+            .get("details", {})
+            .get("precipitation_amount")
+        )
+    except (KeyError, IndexError, TypeError) as exc:
+        logger.exception("MET Norway response did not include expected forecast fields")
+        raise WeatherServiceError(
+            "Weather data could not be read. Please try again later."
+        ) from exc
+
+    wind_speed_ms = details.get("wind_speed")
+    wind_speed_kmh = wind_speed_ms * 3.6 if wind_speed_ms is not None else None
+
+    return {
         "latitude": latitude,
         "longitude": longitude,
-        "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,rain",
+        "generationtime_ms": None,
+        "utc_offset_seconds": 0,
         "timezone": "auto",
+        "timezone_abbreviation": "",
+        "elevation": data.get("geometry", {}).get("coordinates", [None, None, None])[2],
+        "current_units": {
+            "time": "iso8601",
+            "temperature_2m": "celsius",
+            "relative_humidity_2m": "%",
+            "wind_speed_10m": "km/h",
+            "rain": "mm",
+            "precipitation": "mm",
+        },
+        "current": {
+            "time": forecast.get("time"),
+            "temperature_2m": details.get("air_temperature"),
+            "relative_humidity_2m": details.get("relative_humidity"),
+            "wind_speed_10m": (
+                round(wind_speed_kmh, 1) if wind_speed_kmh is not None else None
+            ),
+            "rain": rain or 0,
+            "precipitation": rain or 0,
+        },
     }
-    data = _get_json("https://api.open-meteo.com/v1/forecast", params)
-    current = data.get("current")
-    if isinstance(current, dict) and "rain" in current:
-        current["precipitation"] = current.get("rain", 0)
-    return data
 
 
 def generate_farming_advice(temp, humidity, wind, rainfall):
