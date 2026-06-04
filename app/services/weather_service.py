@@ -1,9 +1,12 @@
 import logging
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 logger = logging.getLogger(__name__)
+TRANSIENT_STATUS_CODES = (502, 503, 504)
 
 
 class WeatherServiceError(Exception):
@@ -12,8 +15,16 @@ class WeatherServiceError(Exception):
 
 def _get_json(url: str, params: dict):
     logger.info("Requesting Open-Meteo API: %s params=%s", url, params)
+    session = requests.Session()
+    retries = Retry(
+        total=3,
+        backoff_factor=0.5,
+        status_forcelist=TRANSIENT_STATUS_CODES,
+        allowed_methods=("GET",),
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retries))
     try:
-        resp = requests.get(url, params=params, timeout=10)
+        resp = session.get(url, params=params, timeout=10)
         resp.raise_for_status()
         return resp.json()
     except requests.exceptions.RequestException as exc:
