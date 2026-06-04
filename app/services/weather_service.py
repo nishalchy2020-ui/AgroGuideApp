@@ -1,13 +1,37 @@
+import logging
+
 import requests
+
+
+logger = logging.getLogger(__name__)
+
+
+class WeatherServiceError(Exception):
+    """User-facing weather service error."""
+
+
+def _get_json(url: str, params: dict):
+    logger.info("Requesting Open-Meteo API: %s params=%s", url, params)
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.RequestException as exc:
+        logger.exception("Open-Meteo API request failed: %s params=%s", url, params)
+        raise WeatherServiceError(
+            "Unable to load weather data right now. Please try again later."
+        ) from exc
+    except ValueError as exc:
+        logger.exception("Open-Meteo API returned invalid JSON: %s params=%s", url, params)
+        raise WeatherServiceError(
+            "Weather data could not be read. Please try again later."
+        ) from exc
 
 
 def geocode_location(query: str):
     params = {"name": query, "count": 5, "language": "en", "format": "json"}
-    resp = requests.get(
-        "https://geocoding-api.open-meteo.com/v1/search", params=params, timeout=10
-    )
-    resp.raise_for_status()
-    results = resp.json().get("results") or []
+    data = _get_json("https://geocoding-api.open-meteo.com/v1/search", params)
+    results = data.get("results") or []
     return results
 
 
@@ -15,15 +39,14 @@ def fetch_weather(latitude: float, longitude: float):
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation",
-        "daily": "precipitation_sum",
+        "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,rain",
         "timezone": "auto",
     }
-    resp = requests.get(
-        "https://api.open-meteo.com/v1/forecast", params=params, timeout=10
-    )
-    resp.raise_for_status()
-    return resp.json()
+    data = _get_json("https://api.open-meteo.com/v1/forecast", params)
+    current = data.get("current")
+    if isinstance(current, dict) and "rain" in current:
+        current["precipitation"] = current.get("rain", 0)
+    return data
 
 
 def generate_farming_advice(temp, humidity, wind, rainfall):
