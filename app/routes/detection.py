@@ -19,6 +19,47 @@ from app.utils.helpers import humanize_class_name, save_upload
 detection_bp = Blueprint("detection", __name__)
 logger = logging.getLogger("agroguide.detection")
 
+SUPPORTED_DETECTIONS = {
+    "Apple___Apple_scab": "Apple Scab",
+    "Apple___Black_rot": "Apple Black Rot",
+    "Apple___Cedar_apple_rust": "Apple Cedar Rust",
+    "Apple___healthy": "Healthy Apple",
+    "Blueberry___healthy": "Healthy Blueberry",
+    "Cherry_(including_sour)___healthy": "Healthy Cherry",
+    "Cherry_(including_sour)___Powdery_mildew": "Cherry Powdery Mildew",
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Corn Gray Leaf Spot",
+    "Corn_(maize)___Common_rust_": "Corn Common Rust",
+    "Corn_(maize)___healthy": "Healthy Corn",
+    "Corn_(maize)___Northern_Leaf_Blight": "Corn Northern Leaf Blight",
+    "Grape___Black_rot": "Grape Black Rot",
+    "Grape___Esca_(Black_Measles)": "Grape Esca (Black Measles)",
+    "Grape___healthy": "Healthy Grape",
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "Grape Leaf Blight",
+    "Orange___Haunglongbing_(Citrus_greening)": "Citrus Greening (HLB)",
+    "Peach___Bacterial_spot": "Peach Bacterial Spot",
+    "Peach___healthy": "Healthy Peach",
+    "Pepper,_bell___Bacterial_spot": "Bell Pepper Bacterial Spot",
+    "Pepper,_bell___healthy": "Healthy Bell Pepper",
+    "Potato___Early_blight": "Potato Early Blight",
+    "Potato___healthy": "Healthy Potato",
+    "Potato___Late_blight": "Potato Late Blight",
+    "Raspberry___healthy": "Healthy Raspberry",
+    "Soybean___healthy": "Healthy Soybean",
+    "Squash___Powdery_mildew": "Squash Powdery Mildew",
+    "Strawberry___healthy": "Healthy Strawberry",
+    "Strawberry___Leaf_scorch": "Strawberry Leaf Scorch",
+    "Tomato___Bacterial_spot": "Tomato Bacterial Spot",
+    "Tomato___Early_blight": "Tomato Early Blight",
+    "Tomato___healthy": "Healthy Tomato",
+    "Tomato___Late_blight": "Tomato Late Blight",
+    "Tomato___Leaf_Mold": "Tomato Leaf Mold",
+    "Tomato___Septoria_leaf_spot": "Tomato Septoria Leaf Spot",
+    "Tomato___Spider_mites Two-spotted_spider_mite": "Tomato Spider Mites",
+    "Tomato___Target_Spot": "Tomato Target Spot",
+    "Tomato___Tomato_mosaic_virus": "Tomato Mosaic Virus",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Tomato Yellow Leaf Curl Virus",
+}
+
 
 def normalize_confidence_percent(value):
     """Return confidence as a display-ready percentage in the 0-100 range."""
@@ -47,6 +88,29 @@ def image_data_url(path):
 def index():
     model_ready = is_model_api_configured()
     return render_template("detection/index.html", model_ready=model_ready)
+
+
+@detection_bp.route("/supported-detections")
+@login_required
+def supported_detections():
+    grouped = {}
+    for class_key, label in SUPPORTED_DETECTIONS.items():
+        plant = label
+        for prefix in ("Healthy ", "Bell Pepper ", "Citrus "):
+            if plant.startswith(prefix):
+                plant = plant[len(prefix):]
+        plant = plant.split(" ", 1)[0]
+        if label.startswith("Bell Pepper"):
+            plant = "Bell Pepper"
+        elif label.startswith("Citrus"):
+            plant = "Citrus"
+        grouped.setdefault(plant, []).append({"class_key": class_key, "label": label})
+
+    return render_template(
+        "detection/supported.html",
+        grouped_detections=dict(sorted(grouped.items())),
+        total_detections=len(SUPPORTED_DETECTIONS),
+    )
 
 
 @detection_bp.route("/predict", methods=["POST"])

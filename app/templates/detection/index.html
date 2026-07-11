@@ -39,49 +39,12 @@
     <div class="card border-l-4 border-amber-500">
       <h3 class="font-semibold mb-3">Best supported detections</h3>
       <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-        AgroGuide is most reliable for clear leaf images from these trained plant categories and disease classes.
+        AgroGuide is most reliable for clear leaf images from the plants and disease classes used to train the model.
         If the confidence is below 60%, treat the result as uncertain and ask an agriculture expert before applying pesticide or treatment.
       </p>
-      <div class="grid sm:grid-cols-2 gap-4 text-sm">
-        <div>
-          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Apple</h4>
-          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
-            <li>Apple scab</li>
-            <li>Black rot</li>
-            <li>Cedar apple rust</li>
-            <li>Healthy leaves</li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Corn / maize</h4>
-          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
-            <li>Gray leaf spot</li>
-            <li>Common rust</li>
-            <li>Northern leaf blight</li>
-            <li>Healthy leaves</li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Pepper and potato</h4>
-          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
-            <li>Pepper bacterial spot</li>
-            <li>Healthy pepper leaves</li>
-            <li>Potato early blight</li>
-            <li>Potato late blight</li>
-            <li>Healthy potato leaves</li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Tomato</h4>
-          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
-            <li>Bacterial spot, early blight, and late blight</li>
-            <li>Leaf mold and Septoria leaf spot</li>
-            <li>Spider mites and target spot</li>
-            <li>Yellow leaf curl virus and mosaic virus</li>
-            <li>Healthy leaves</li>
-          </ul>
-        </div>
-      </div>
+      <a href="{{ url_for('detection.supported_detections') }}" class="btn-primary inline-flex">
+        {{ icon('list-checks', 'w-4 h-4') }} View all supported detections
+      </a>
     </div>
   </div>
 </div>
