@@ -61,10 +61,11 @@ def register():
             flash("Password must be at least 8 characters.", "error")
         elif "@" not in email or "." not in email.rsplit("@", 1)[-1]:
             flash("Enter a valid email address.", "error")
-        elif User.query.filter_by(email=email).first():
-            flash("Email already registered.", "error")
         else:
             try:
+                if User.query.filter_by(email=email).first():
+                    flash("Email already registered.", "error")
+                    return render_template("auth/register.html")
                 user = User(
                     name=name,
                     email=email,
@@ -98,16 +99,27 @@ def login():
         if _rate_limited(_client_key("login", email), limit=6):
             flash("Too many login attempts. Please wait a few minutes.", "error")
             return render_template("auth/login.html"), 429
-        user = User.query.filter_by(email=email).first()
+        try:
+            user = User.query.filter_by(email=email).first()
+        except SQLAlchemyError:
+            db.session.rollback()
+            logger.exception("Login database lookup failed for email=%s", email)
+            flash("Login is temporarily unavailable. Please try again shortly.", "error")
+            return render_template("auth/login.html"), 503
 
         if user and check_password_hash(user.password_hash, password):
-            session.permanent = True
-            login_user(user, remember=bool(request.form.get("remember")))
-            next_page = request.args.get("next")
-            flash("Logged in successfully.", "success")
-            if user.is_admin and request.form.get("admin_login"):
-                return redirect(url_for("admin.dashboard"))
-            return redirect(next_page if _is_safe_next(next_page) else url_for("main.dashboard"))
+            try:
+                session.permanent = True
+                login_user(user, remember=bool(request.form.get("remember")))
+                next_page = request.args.get("next")
+                flash("Logged in successfully.", "success")
+                if user.is_admin and request.form.get("admin_login"):
+                    return redirect(url_for("admin.dashboard"))
+                return redirect(next_page if _is_safe_next(next_page) else url_for("main.dashboard"))
+            except Exception:
+                logger.exception("Login session setup failed for email=%s", email)
+                flash("Login could not be completed. Please try again.", "error")
+                return render_template("auth/login.html"), 500
 
         flash("Invalid email or password.", "error")
 

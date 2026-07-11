@@ -10,6 +10,7 @@
       <p class="text-slate-500 text-sm mt-1">Sign in to your dashboard</p>
     </div>
     <form method="post" class="space-y-4">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <div><label class="label">Email</label><input type="email" name="email" required class="input"></div>
       <div><label class="label">Password</label><input type="password" name="password" required class="input"></div>
       <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="remember" class="rounded"> Remember me</label>

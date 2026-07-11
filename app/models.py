@@ -20,12 +20,40 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
 
-    scans = db.relationship("ScanResult", backref="user", lazy="dynamic")
+    scans = db.relationship(
+        "ScanResult",
+        backref="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
     weather_searches = db.relationship(
-        "WeatherSearch", backref="user", lazy="dynamic"
+        "WeatherSearch",
+        backref="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
     chat_messages = db.relationship(
-        "ChatbotMessage", backref="user", lazy="dynamic"
+        "ChatbotMessage",
+        backref="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    admin_logs = db.relationship(
+        "AdminLog",
+        backref="admin",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    activities = db.relationship(
+        "ActivityHistory",
+        backref="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
 
@@ -33,7 +61,7 @@ class ScanResult(db.Model):
     __tablename__ = "scan_results"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     image_filename = db.Column(db.String(255), nullable=False)
     disease_class = db.Column(db.String(255), nullable=False)
     disease_label = db.Column(db.String(255), nullable=False)
@@ -46,7 +74,7 @@ class WeatherSearch(db.Model):
     __tablename__ = "weather_searches"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     location_name = db.Column(db.String(255), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
@@ -63,7 +91,7 @@ class ChatbotMessage(db.Model):
     __tablename__ = "chatbot_messages"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     role = db.Column(db.String(16), nullable=False)
     message = db.Column(db.Text, nullable=True)
     content = db.Column(db.Text, nullable=False)
@@ -99,7 +127,7 @@ class AdminLog(db.Model):
     __tablename__ = "admin_logs"
 
     id = db.Column(db.Integer, primary_key=True)
-    admin_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    admin_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     action = db.Column(db.String(255), nullable=False)
     details = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=utcnow)
@@ -111,14 +139,12 @@ class ActivityHistory(db.Model):
     __tablename__ = "activity_history"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     module = db.Column(db.String(64), nullable=False, index=True)
     title = db.Column(db.String(255), nullable=False)
     summary = db.Column(db.Text, default="{}")
     ref_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
-
-    user = db.relationship("User", backref=db.backref("activities", lazy="dynamic"))
 
 
 def ensure_chatbot_message_schema():
