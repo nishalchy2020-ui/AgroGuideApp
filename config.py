@@ -7,7 +7,7 @@ import os
 import warnings
 from datetime import timedelta
 from pathlib import Path
-from urllib.parse import quote_plus
+from urllib.parse import parse_qsl, quote_plus, urlencode, urlsplit, urlunsplit
 
 from dotenv import load_dotenv
 
@@ -59,6 +59,30 @@ def is_vercel() -> bool:
     return bool(os.getenv("VERCEL"))
 
 
+def database_uri():
+    """Build a PostgreSQL URI and drop query args unsupported by some drivers."""
+    configured_url = getenv("DATABASE_URL")
+    if configured_url:
+        parts = urlsplit(configured_url)
+        query = [
+            (key, value)
+            for key, value in parse_qsl(parts.query, keep_blank_values=True)
+            if key != "connect_timeout"
+        ]
+        return urlunsplit(
+            (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
+        )
+
+    return (
+        "postgresql+psycopg2://"
+        f"{quote_plus(getenv('DB_USER', 'postgres'))}:"
+        f"{quote_plus(getenv('DB_PASSWORD', ''))}@"
+        f"{getenv('DB_HOST', 'localhost')}:"
+        f"{getenv('DB_PORT', '5432')}/"
+        f"{getenv('DB_NAME', 'agroguide')}"
+    )
+
+
 class Config:
     """Base configuration — all values from environment with safe defaults."""
 
@@ -69,15 +93,13 @@ class Config:
     DB_NAME = getenv("DB_NAME", "agroguide")
     DB_USER = getenv("DB_USER", "postgres")
     DB_PASSWORD = getenv("DB_PASSWORD", "")
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL") or (
-        "postgresql+psycopg2://"
-        f"{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
         "pool_recycle": getenv_int("DB_POOL_RECYCLE_SECONDS", 1800),
     }
+    SEND_FILE_MAX_AGE_DEFAULT = timedelta(days=getenv_int("STATIC_CACHE_DAYS", 7))
     AUTO_INIT_DB = getenv_bool("AUTO_INIT_DB", default=False)
     LOG_LEVEL = getenv("LOG_LEVEL", "INFO").upper()
 
