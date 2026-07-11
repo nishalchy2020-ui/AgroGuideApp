@@ -96,7 +96,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
+        "pool_pre_ping": getenv_bool("DB_POOL_PRE_PING", default=not is_vercel()),
         "pool_recycle": getenv_int("DB_POOL_RECYCLE_SECONDS", 1800),
     }
     SEND_FILE_MAX_AGE_DEFAULT = timedelta(days=getenv_int("STATIC_CACHE_DAYS", 7))

@@ -3,9 +3,10 @@ import os
 import hmac
 import secrets
 import sys
+import time
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, request, session
+from flask import Flask, abort, g, jsonify, request, session
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
@@ -89,9 +90,19 @@ def _register_error_handlers(app):
 
     @app.before_request
     def _log_request():
+        g.request_started_at = time.perf_counter()
         app.logger.debug("%s %s", request.method, request.path)
         if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             _validate_csrf()
+
+    @app.after_request
+    def _add_timing_headers(response):
+        started_at = getattr(g, "request_started_at", None)
+        if started_at is not None:
+            elapsed_ms = (time.perf_counter() - started_at) * 1000
+            response.headers["Server-Timing"] = f"app;dur={elapsed_ms:.1f}"
+            response.headers["X-Response-Time-ms"] = f"{elapsed_ms:.1f}"
+        return response
 
     @app.teardown_request
     def _rollback_on_error(exc):

@@ -1,12 +1,25 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "regions": ["arn1"],
   "builds": [
+    {
+      "src": "app/static/**",
+      "use": "@vercel/static"
+    },
     {
       "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/app/static/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=604800, immutable"
+      }
+    },
     {
       "src": "/(.*)",
       "dest": "api/index.py"

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 
 from app import db
 from app.models import ActivityHistory, ScanResult
@@ -48,8 +48,16 @@ def dashboard():
         .limit(12)
         .all()
     )
-    total_scans = ScanResult.query.filter_by(user_id=current_user.id).count()
-    total_activities = ActivityHistory.query.filter_by(user_id=current_user.id).count()
+    total_scans, total_activities = db.session.execute(
+        select(
+            select(func.count(ScanResult.id))
+            .where(ScanResult.user_id == current_user.id)
+            .scalar_subquery(),
+            select(func.count(ActivityHistory.id))
+            .where(ActivityHistory.user_id == current_user.id)
+            .scalar_subquery(),
+        )
+    ).one()
 
     quick_actions = [
         {"label": "Disease Detection", "url": url_for("detection.index"), "icon": "scan"},
