@@ -60,6 +60,47 @@ SUPPORTED_DETECTIONS = {
     "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Tomato Yellow Leaf Curl Virus",
 }
 
+SUPPORTED_DETECTION_DESCRIPTIONS = {
+    "Apple___Apple_scab": "A fungal apple disease that often causes dark, scabby spots on leaves and fruit.",
+    "Apple___Black_rot": "A fungal disease that can create leaf spots, fruit rot, and branch cankers on apple trees.",
+    "Apple___Cedar_apple_rust": "A rust disease linked to apple and cedar hosts, often seen as orange-yellow leaf spots.",
+    "Apple___healthy": "Apple foliage with no strong visible symptoms from the trained disease classes.",
+    "Blueberry___healthy": "Blueberry foliage that appears healthy within the model's supported visual classes.",
+    "Cherry_(including_sour)___healthy": "Cherry foliage with no strong visible disease pattern from the trained classes.",
+    "Cherry_(including_sour)___Powdery_mildew": "A fungal disease that can leave pale, powdery growth on cherry leaves and shoots.",
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "A corn leaf disease that usually forms rectangular gray or tan lesions between veins.",
+    "Corn_(maize)___Common_rust_": "A corn disease marked by small rust-colored pustules scattered across leaf surfaces.",
+    "Corn_(maize)___healthy": "Corn foliage that appears healthy within the model's supported visual classes.",
+    "Corn_(maize)___Northern_Leaf_Blight": "A corn disease that often forms long, cigar-shaped gray-green lesions on leaves.",
+    "Grape___Black_rot": "A fungal grape disease that can cause brown leaf spots and shriveled dark fruit.",
+    "Grape___Esca_(Black_Measles)": "A grapevine disease often associated with striped leaf discoloration and dark fruit spotting.",
+    "Grape___healthy": "Grape foliage with no strong visible disease pattern from the trained classes.",
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "A grape leaf disease that commonly creates angular brown spots and leaf blight symptoms.",
+    "Orange___Haunglongbing_(Citrus_greening)": "A serious citrus disease linked with blotchy yellowing, weak growth, and poor fruit quality.",
+    "Peach___Bacterial_spot": "A bacterial disease that can create small dark leaf spots and shot-hole damage on peach leaves.",
+    "Peach___healthy": "Peach foliage that appears healthy within the model's supported visual classes.",
+    "Pepper,_bell___Bacterial_spot": "A bacterial bell pepper disease that causes small water-soaked or dark leaf spots.",
+    "Pepper,_bell___healthy": "Bell pepper foliage with no strong visible disease pattern from the trained classes.",
+    "Potato___Early_blight": "A potato disease often recognized by brown leaf spots with target-like rings.",
+    "Potato___healthy": "Potato foliage that appears healthy within the model's supported visual classes.",
+    "Potato___Late_blight": "A fast-moving potato disease that can create dark, water-soaked lesions on leaves.",
+    "Raspberry___healthy": "Raspberry foliage with no strong visible disease pattern from the trained classes.",
+    "Soybean___healthy": "Soybean foliage that appears healthy within the model's supported visual classes.",
+    "Squash___Powdery_mildew": "A fungal squash disease that creates white powdery patches on leaf surfaces.",
+    "Strawberry___healthy": "Strawberry foliage with no strong visible disease pattern from the trained classes.",
+    "Strawberry___Leaf_scorch": "A strawberry disease that can create reddish-purple spots and scorched-looking leaf edges.",
+    "Tomato___Bacterial_spot": "A bacterial tomato disease that often causes small dark spots on leaves and fruit.",
+    "Tomato___Early_blight": "A tomato disease commonly seen as brown leaf spots with concentric rings.",
+    "Tomato___healthy": "Tomato foliage that appears healthy within the model's supported visual classes.",
+    "Tomato___Late_blight": "A destructive tomato disease that can form dark, water-soaked leaf and stem lesions.",
+    "Tomato___Leaf_Mold": "A tomato disease favored by humidity, often showing yellow leaf patches and mold underneath.",
+    "Tomato___Septoria_leaf_spot": "A tomato leaf spot disease that produces many small circular spots with pale centers.",
+    "Tomato___Spider_mites Two-spotted_spider_mite": "A mite-related tomato issue that can cause stippling, yellowing, and bronzed leaves.",
+    "Tomato___Target_Spot": "A tomato disease that creates round target-like leaf lesions and can weaken foliage.",
+    "Tomato___Tomato_mosaic_virus": "A viral tomato disease that can cause mottled leaves, curling, and uneven growth.",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "A viral tomato disease often linked with yellowing, curled leaves, and stunted plants.",
+}
+
 
 def normalize_confidence_percent(value):
     """Return confidence as a display-ready percentage in the 0-100 range."""
@@ -104,7 +145,13 @@ def supported_detections():
             plant = "Bell Pepper"
         elif label.startswith("Citrus"):
             plant = "Citrus"
-        grouped.setdefault(plant, []).append({"class_key": class_key, "label": label})
+        grouped.setdefault(plant, []).append(
+            {
+                "class_key": class_key,
+                "label": label,
+                "description": SUPPORTED_DETECTION_DESCRIPTIONS[class_key],
+            }
+        )
 
     return render_template(
         "detection/supported.html",
