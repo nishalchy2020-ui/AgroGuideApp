@@ -7,15 +7,18 @@ import os
 import warnings
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 
-DEFAULT_GEMINI_MODEL = "gemini-2.0-flash-lite"
-FALLBACK_GEMINI_MODEL = "gemini-2.0-flash"
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
+FALLBACK_GEMINI_MODEL = "gemini-2.5-flash"
 DEPRECATED_GEMINI_MODELS = {
     "gemini-pro",
     "gemini-1.0-pro",
     "gemini-1.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
 }
 
 # Project root (directory containing config.py)
@@ -61,14 +64,22 @@ class Config:
 
     SECRET_KEY = getenv("SECRET_KEY") or "dev-change-me-in-production"
 
-    # Vercel filesystem is read-only except /tmp.
-    # Therefore SQLite must be stored in /tmp on Vercel.
+    DB_HOST = getenv("DB_HOST", "localhost")
+    DB_PORT = getenv("DB_PORT", "5432")
+    DB_NAME = getenv("DB_NAME", "agroguide")
+    DB_USER = getenv("DB_USER", "postgres")
+    DB_PASSWORD = getenv("DB_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL") or (
-        "sqlite:////tmp/agroguide.db"
-        if is_vercel()
-        else f"sqlite:///{BASE_DIR / 'agroguide.db'}"
+        "postgresql+psycopg2://"
+        f"{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": getenv_int("DB_POOL_RECYCLE_SECONDS", 1800),
+    }
+    AUTO_INIT_DB = getenv_bool("AUTO_INIT_DB", default=False)
+    LOG_LEVEL = getenv("LOG_LEVEL", "INFO").upper()
 
     PERMANENT_SESSION_LIFETIME = timedelta(
         days=getenv_int("SESSION_LIFETIME_DAYS", 30)
@@ -87,12 +98,10 @@ class Config:
         )
     )
 
-    ML_MODELS_FOLDER = BASE_DIR / "app" / "ml_models"
     MAX_CONTENT_LENGTH = getenv_int("MAX_UPLOAD_MB", 8) * 1024 * 1024
     ALLOWED_EXTENSIONS = frozenset({"png", "jpg", "jpeg", "webp", "gif"})
-
-    MODEL_CHECKPOINT = ML_MODELS_FOLDER / "plant_disease_checkpoint.pth"
-    CLASS_INDICES = ML_MODELS_FOLDER / "class_indices.json"
+    MODEL_API_URL = getenv("MODEL_API_URL", "")
+    MODEL_API_TIMEOUT_SECONDS = getenv_int("MODEL_API_TIMEOUT_SECONDS", 30)
 
     OPEN_METEO_GEOCODE = getenv(
         "OPEN_METEO_GEOCODE_URL", "https://geocoding-api.open-meteo.com/v1/search"
@@ -109,6 +118,7 @@ class Config:
     GEMINI_MODEL = getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
     SEARCH_PROVIDER = getenv("SEARCH_PROVIDER", "tavily")
     SEARCH_API_KEY = getenv("SEARCH_API_KEY", "")
+    GOOGLE_SEARCH_API_KEY = getenv("GOOGLE_SEARCH_API_KEY", "")
     GOOGLE_CSE_ID = getenv("GOOGLE_CSE_ID", "")
 
     FLASK_ENV = getenv("FLASK_ENV", "development")
@@ -124,6 +134,11 @@ class Config:
         if cls.SECRET_KEY == "dev-change-me-in-production":
             warnings.warn(
                 "SECRET_KEY is not set. Copy .env.example to .env and set a strong SECRET_KEY.",
+                stacklevel=2,
+            )
+        if not cls.DB_PASSWORD and not getenv("DATABASE_URL"):
+            warnings.warn(
+                "DB_PASSWORD is not set. PostgreSQL authentication may fail.",
                 stacklevel=2,
             )
         if not cls.GEMINI_API_KEY:

@@ -1,4 +1,5 @@
 from collections import Counter
+import logging
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -8,6 +9,7 @@ from app.models import AdminLog, DiseaseKnowledge, ScanResult, User
 from app.utils.decorators import admin_required
 
 admin_bp = Blueprint("admin", __name__)
+logger = logging.getLogger("agroguide.admin")
 
 
 @admin_bp.route("/")
@@ -57,9 +59,14 @@ def knowledge():
                     details=class_name,
                 )
             )
-            db.session.commit()
-            flash("Knowledge base updated.", "success")
-            return redirect(url_for("admin.knowledge", edit=class_name))
+            try:
+                db.session.commit()
+                flash("Knowledge base updated.", "success")
+                return redirect(url_for("admin.knowledge", edit=class_name))
+            except Exception:
+                db.session.rollback()
+                logger.exception("Failed to update knowledge class=%s", class_name)
+                flash("Knowledge base could not be updated.", "error")
 
     edit_class = request.args.get("edit")
     records = DiseaseKnowledge.query.order_by(DiseaseKnowledge.class_name).all()

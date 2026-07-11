@@ -1,7 +1,6 @@
 import base64
+import logging
 import mimetypes
-import os
-import requests
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -10,40 +9,15 @@ from app import db
 from app.models import ScanResult
 from app.services.history_service import log_activity
 from app.services.knowledge_service import get_knowledge_for_class, severity_badge_class
+from app.services.model_api_service import (
+    ModelApiError,
+    is_model_api_configured,
+    predict_leaf_disease,
+)
 from app.utils.helpers import humanize_class_name, save_upload
 
 detection_bp = Blueprint("detection", __name__)
-
-
-def is_remote_ai_ready():
-    return bool(os.getenv("AI_API_URL"))
-
-
-def predict_with_remote_api(file):
-    ai_api_url = os.getenv("AI_API_URL")
-
-    if not ai_api_url:
-        return {
-            "success": False,
-            "error": "AI_API_URL is not configured."
-        }
-
-    file.stream.seek(0)
-
-    response = requests.post(
-        ai_api_url,
-        files={
-            "image": (
-                file.filename,
-                file.stream,
-                file.content_type or "image/jpeg",
-            )
-        },
-        timeout=60,
-    )
-
-    response.raise_for_status()
-    return response.json()
+logger = logging.getLogger("agroguide.detection")
 
 
 def normalize_confidence_percent(value):
@@ -71,16 +45,16 @@ def image_data_url(path):
 @detection_bp.route("/")
 @login_required
 def index():
-    model_ready = is_remote_ai_ready()
+    model_ready = is_model_api_configured()
     return render_template("detection/index.html", model_ready=model_ready)
 
 
 @detection_bp.route("/predict", methods=["POST"])
 @login_required
 def predict():
-    if not is_remote_ai_ready():
+    if not is_model_api_configured():
         flash(
-            "AI prediction API is not configured. Please set AI_API_URL in environment variables.",
+            "AI prediction is not configured. Set MODEL_API_URL in environment variables.",
             "error",
         )
         return redirect(url_for("detection.index"))
@@ -93,13 +67,11 @@ def predict():
 
     try:
         filename, path = save_upload(file)
-
-        # After saving, reset file stream and send same uploaded image to Render AI API
-        result = predict_with_remote_api(file)
-
-        if not result.get("success", True):
-            flash(result.get("error", "Prediction failed from AI API."), "error")
-            return redirect(url_for("detection.index"))
+        result = predict_leaf_disease(
+            path,
+            filename=file.filename,
+            content_type=file.content_type or "image/jpeg",
+        )
 
     except ValueError as e:
         flash(str(e), "error")
@@ -107,10 +79,13 @@ def predict():
     except FileNotFoundError as e:
         flash(str(e), "error")
         return redirect(url_for("detection.index"))
-    except requests.exceptions.RequestException as e:
-        flash(f"AI API request failed: {e}", "error")
+    except ModelApiError as e:
+        logger.warning("AWS model prediction failed: %s", e)
+        flash(str(e), "error")
         return redirect(url_for("detection.index"))
     except Exception as e:
+        db.session.rollback()
+        logger.exception("Prediction failed.")
         flash(f"Prediction failed: {e}", "error")
         return redirect(url_for("detection.index"))
 
@@ -153,11 +128,18 @@ def predict():
             "disease_class": class_name,
             "confidence": confidence,
             "severity": severity,
+            "model_api": result.get("additional_info", {}),
         },
         ref_id=scan.id,
     )
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception("Failed to save scan result for user_id=%s", current_user.id)
+        flash("Prediction succeeded, but saving the result failed. Please try again.", "error")
+        return redirect(url_for("detection.index"))
 
     return render_template(
         "detection/result.html",
@@ -165,6 +147,8 @@ def predict():
         knowledge=knowledge,
         badge_class=severity_badge_class(severity),
         confidence_percent=normalize_confidence_percent(scan.confidence),
+        api_result=result.get("raw_response", {}),
+        additional_info=result.get("additional_info", {}),
         image_src=image_data_url(path),
         image_url=url_for("main.serve_upload", filename=filename),
     )
@@ -187,6 +171,8 @@ def result_detail(scan_id):
         knowledge=knowledge,
         badge_class=severity_badge_class(scan.severity),
         confidence_percent=normalize_confidence_percent(scan.confidence),
+        api_result={},
+        additional_info={},
         image_src=None,
         image_url=url_for("main.serve_upload", filename=scan.image_filename),
     )

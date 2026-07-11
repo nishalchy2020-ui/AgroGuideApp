@@ -17,6 +17,7 @@
       <p class="mt-2 text-sm">Irrigation needed: <strong>{{ 'Yes' if result.irrigation_needed else 'No' }}</strong></p>
       <p class="text-sm mt-2">{{ result.frequency }}</p>
       <p class="text-xs text-slate-500 mt-2">{{ result.stage_note }}</p>
+      {% if result.history_note %}<p class="text-xs text-amber-600 dark:text-amber-300 mt-2">{{ result.history_note }}</p>{% endif %}
     </div>
     <div class="card border-l-4 border-amber-500"><h4 class="font-semibold text-sm">Overwatering</h4><p class="text-sm mt-1">{{ result.overwatering_warning }}</p></div>
     <div class="card border-l-4 border-blue-500"><h4 class="font-semibold text-sm">Underwatering</h4><p class="text-sm mt-1">{{ result.underwatering_warning }}</p></div>

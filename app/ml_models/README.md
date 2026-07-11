@@ -1,38 +1,35 @@
-# AgroGuide ML Models
+# AgroGuide Disease Model
 
-Place your trained model files in this directory:
+The plant disease model is no longer loaded by this Flask application.
 
-| File | Description |
-|------|-------------|
-| `plant_disease_checkpoint.pth` | PyTorch state dict or full checkpoint for MobileNetV2 classifier |
-| `class_indices.json` | JSON mapping index → class name (e.g. `{"0": "Tomato_healthy", "1": "..."}`) |
+Disease prediction now happens through the AWS-hosted Flask API configured with:
 
-## Expected checkpoint format
+```dotenv
+MODEL_API_URL=http://your-ec2-public-host-or-ip:5000/predict
+MODEL_API_TIMEOUT_SECONDS=30
+```
 
-The app loads **MobileNetV2** from torchvision and sets `num_classes` from the **checkpoint** (classifier layer shape). Labels come from `class_indices.json` and must cover every index `0 .. num_classes-1`. If your JSON has fewer names than the model, generic `class_N` labels are used for the rest.
+The app sends uploaded leaf images to `MODEL_API_URL` as `multipart/form-data`
+with the file field named `image`.
 
-Supported checkpoint keys (first match wins):
-- Full model `state_dict`
-- Nested `model_state_dict` / `state_dict`
+Expected JSON response examples:
 
-## Example class_indices.json
-
-Either format works:
-
-**Index → class name:**
 ```json
 {
-  "0": "Apple___Apple_scab",
-  "1": "Tomato_healthy"
+  "success": true,
+  "prediction": "Tomato___Late_blight",
+  "confidence": 0.91
 }
 ```
 
-**Class name → index** (common PyTorch training export):
+or:
+
 ```json
 {
-  "Apple___Apple_scab": 0,
-  "Tomato_healthy": 1
+  "disease_class": "Tomato___Late_blight",
+  "confidence_percent": 91.0,
+  "advice": "Remove infected leaves and avoid overhead irrigation."
 }
 ```
 
-After adding files, restart the Flask app. Predictions work once both files are present.
+Additional fields are preserved and saved with scan history metadata.

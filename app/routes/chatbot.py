@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, current_app, jsonify, render_template, request
 from flask_login import current_user, login_required
 
@@ -5,8 +7,10 @@ from app import db
 from app.models import ChatbotMessage
 from app.services.chatbot_service import generate_hybrid_reply
 from app.services.history_service import log_activity
+from app.services.user_context import chatbot_user_context
 
 chatbot_bp = Blueprint("chatbot", __name__)
+logger = logging.getLogger("agroguide.chatbot")
 
 
 @chatbot_bp.route("/")
@@ -45,7 +49,12 @@ def message():
     prior.reverse()
     conversation = [{"role": m.role, "content": m.display_message} for m in prior]
 
-    result = generate_hybrid_reply(text, conversation=conversation)
+    user_context = chatbot_user_context(current_user.id)
+    result = generate_hybrid_reply(
+        text,
+        conversation=conversation,
+        user_context=user_context,
+    )
     reply = result["reply"]
     source_type = result.get("source_type", "fallback")
 
@@ -69,9 +78,18 @@ def message():
         current_user.id,
         "chatbot",
         f"Chat: {text[:60]}{'...' if len(text) > 60 else ''}",
-        {"question": text, "answer_preview": reply[:200]},
+        {
+            "question": text,
+            "answer_preview": reply[:200],
+            "context_used": bool(user_context.get("summary")),
+        },
     )
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception("Failed to save chatbot conversation for user_id=%s", current_user.id)
+        return jsonify({"error": "Message could not be saved. Please retry."}), 500
 
     return jsonify(
         {
@@ -79,6 +97,7 @@ def message():
             "error": bool(result.get("error")),
             "source_type": source_type,
             "sources": result.get("sources", []),
+            "context_used": bool(user_context.get("summary")),
             "user_message_id": user_msg.id,
             "assistant_message_id": assistant_msg.id,
         }
@@ -99,14 +118,24 @@ def delete(message_id):
         id=message_id,
         user_id=current_user.id,
     ).first_or_404()
-    db.session.delete(msg)
-    db.session.commit()
+    try:
+        db.session.delete(msg)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception("Failed to delete chatbot message id=%s", message_id)
+        return jsonify({"error": "Message could not be deleted."}), 500
     return jsonify({"ok": True, "deleted_id": message_id})
 
 
 @chatbot_bp.route("/clear", methods=["POST"])
 @login_required
 def clear():
-    ChatbotMessage.query.filter_by(user_id=current_user.id).delete()
-    db.session.commit()
+    try:
+        ChatbotMessage.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception("Failed to clear chatbot messages for user_id=%s", current_user.id)
+        return jsonify({"error": "Messages could not be cleared."}), 500
     return jsonify({"ok": True})

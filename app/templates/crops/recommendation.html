@@ -7,6 +7,7 @@
     <div><label class="label">Soil type</label><select name="soil_type" class="input" required>{% for s in soils %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
     <div><label class="label">Season</label><select name="season" class="input" required>{% for s in seasons %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select></div>
     <div><label class="label">Water availability</label><select name="water_availability" class="input" required>{% for w in water_levels %}<option value="{{ w }}">{{ w|title }}</option>{% endfor %}</select></div>
+    <div><label class="label">Region / farm area</label><input type="text" name="region" class="input" placeholder="e.g. Terai, mid-hill, dry valley"></div>
     <div><label class="label">Temperature (C)</label><input type="number" step="0.1" name="temperature" class="input" placeholder="e.g. 24" required></div>
     <div class="grid grid-cols-2 gap-3">
       <div><label class="label">Rainfall (mm, optional)</label><input type="number" name="rainfall" class="input"></div>
@@ -31,6 +32,11 @@
       {% endif %}
     </div>
     {% endfor %}
+    {% if result.history_context and result.history_context.has_history %}
+    <div class="card border-l-4 border-amber-500 text-sm text-slate-600 dark:text-slate-400">
+      <strong>Personalized scan-history note:</strong> {{ result.history_context.risk_note }}
+    </div>
+    {% endif %}
     {% else %}
     <div class="card text-slate-500 text-sm">{{ icon('info', 'w-5 h-5 inline') }} Enter your field conditions to receive ranked crop recommendations.</div>
     {% endif %}

@@ -1,20 +1,42 @@
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, abort, current_app, redirect, render_template, request, send_from_directory, url_for
+from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
+from sqlalchemy import text
 
 from app import db
 from app.models import ActivityHistory, ScanResult
 from app.services.history_service import MODULE_LABELS, module_label
 
 main_bp = Blueprint("main", __name__)
+logger = logging.getLogger("agroguide.main")
 
 
 @main_bp.route("/")
 def index():
     return render_template("landing.html")
+
+
+@main_bp.route("/health")
+def health():
+    checks = {
+        "app": "ok",
+        "database": "unknown",
+        "model_api_configured": bool(current_app.config.get("MODEL_API_URL")),
+    }
+    status_code = 200
+    try:
+        db.session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        db.session.rollback()
+        logger.exception("Health check database probe failed.")
+        checks["database"] = "error"
+        status_code = 503
+    return jsonify(checks), status_code
 
 
 @main_bp.route("/dashboard")
@@ -61,8 +83,12 @@ def history():
             id=item_id, user_id=current_user.id
         ).first()
         if item:
-            db.session.delete(item)
-            db.session.commit()
+            try:
+                db.session.delete(item)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                logger.exception("Failed to delete history item id=%s", item_id)
         return redirect(url_for("main.history", **{k: v for k, v in request.args.items()}))
 
     return render_template(

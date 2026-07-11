@@ -26,6 +26,7 @@
         <div><dt class="text-slate-500">Timing</dt><dd>{{ result.application_timing }}</dd></div>
         <div><dt class="text-slate-500">Organic</dt><dd>{{ result.organic_alternative }}</dd></div>
       </dl>
+      {% if result.history_note %}<p class="text-xs text-amber-600 dark:text-amber-300 mt-3">{{ result.history_note }}</p>{% endif %}
     </div>
     <div class="card border-l-4 border-red-400"><p class="text-sm"><strong>Safety:</strong> {{ result.safety_warning }}</p></div>
   </div>

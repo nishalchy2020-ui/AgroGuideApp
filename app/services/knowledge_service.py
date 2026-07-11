@@ -7,6 +7,20 @@ from app.models import DiseaseKnowledge
 _DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "disease_knowledge.json"
 _CROP_GUIDES_PATH = Path(__file__).resolve().parent.parent / "data" / "crop_guides.json"
 
+COMMON_CROPS = (
+    "apple", "apricot", "avocado", "banana", "barley", "bean", "beans",
+    "blueberry", "brinjal", "broccoli", "cabbage", "carrot", "cassava",
+    "cauliflower", "cherry", "cherries", "chickpea", "citrus", "cocoa",
+    "coconut", "coffee", "cotton", "cucumber", "eggplant", "garlic",
+    "grape", "grapes", "guava", "lentil", "lettuce", "lemon", "lime",
+    "maize", "mango", "melon", "mustard", "okra", "onion", "orange",
+    "papaya", "pea", "peas", "peach", "pear", "pepper", "pineapple",
+    "plum", "pomegranate", "potato", "pumpkin", "rice", "sorghum",
+    "soybean", "spinach", "squash", "strawberry", "sugarcane",
+    "sunflower", "sweet potato", "tea", "tomato", "watermelon", "wheat",
+    "yam", "zucchini",
+)
+
 APP_FEATURES = {
     "disease detection": (
         "Use Disease Detection to upload a clear leaf photo. AgroGuide returns the predicted "
@@ -36,11 +50,16 @@ AGRICULTURE_TERMS = re.compile(
     r"\b(agroguide|crop\w*|farm\w*|soil\w*|plant\w*|leaf|leaves|"
     r"disease\w*|pest\w*|fertiliz\w*|irrigat\w*|harvest\w*|seed\w*|"
     r"tomato\w*|potato\w*|corn|maize|rice|wheat|soybean\w*|onion\w*|"
+    r"cherry|cherries|stone fruit|watermelon\w*|melon\w*|"
     r"cucumber\w*|pepper\w*|apple\w*|weather|rain\w*|humid\w*|organic|"
     r"npk|ph|blight\w*|rust|mite\w*|aphid\w*|compost|manure|greenhouse|"
     r"field\w*|agri\w*|grow\w*|sow\w*|mulch\w*|drip|spray\w*|fungic\w*|"
     r"herbic\w*|insect\w*|weed\w*|yield\w*|vegetable\w*|fruit\w*|"
     r"orchard\w*|root\w*|nitrogen|phosphor\w*|potassium)\b",
+    re.I,
+)
+COMMON_CROP_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(crop) for crop in sorted(COMMON_CROPS, key=len, reverse=True)) + r")\b",
     re.I,
 )
 
@@ -50,6 +69,65 @@ UNRELATED_MESSAGE = (
 )
 
 GENERAL_RULES = [
+    (
+        r"\b(apple).*\b(scab|fung|spot|disease|reduce|prevent|control)\b|"
+        r"\b(scab).*\b(apple)\b",
+        "To reduce apple scab:\n"
+        "1. Remove and destroy fallen infected leaves and fruit because the fungus overwinters in leaf litter.\n"
+        "2. Prune trees to open the canopy so leaves dry faster after rain.\n"
+        "3. Avoid overhead irrigation; water at the soil line when possible.\n"
+        "4. Apply mulch after sanitation to reduce spore splash from old leaves.\n"
+        "5. Plant resistant varieties where possible.\n"
+        "6. Use a preventive fungicide program during bud break, green tip, bloom, and early fruit set if local disease pressure is high.\n"
+        "7. Do not spray blindly; follow local extension guidance and product labels for timing and pre-harvest interval.\n"
+        "8. Keep nitrogen balanced because dense soft growth increases humidity inside the canopy.",
+    ),
+    (
+        r"\b(watermelon|watermelons|melon|melons)\b.*\b(step|steps|plant|grow|growing|cultivat|care|fertiliz|irrigat|water)?|"
+        r"\b(step|steps|plant|grow|growing|cultivat|care|fertiliz|irrigat|water)\b.*\b(watermelon|watermelons|melon|melons)\b",
+        "Watermelon growing guide:\n"
+        "1. Plant in warm weather after frost risk has passed; soil should be warm for good germination.\n"
+        "2. Choose full sun and loose, well-drained sandy loam or loam with pH around 6.0-7.0.\n"
+        "3. Mix compost or well-rotted manure before planting; avoid heavy fresh manure.\n"
+        "4. Sow seeds 2-3 cm deep or transplant carefully without disturbing roots.\n"
+        "5. Space vines widely so leaves dry quickly and fruits have room to develop.\n"
+        "6. Water deeply and consistently during vine growth, flowering, and fruit enlargement; reduce watering near harvest to improve sweetness.\n"
+        "7. Use mulch to conserve moisture, suppress weeds, and keep fruit off wet soil.\n"
+        "8. Fertilize with moderate nitrogen early, then shift toward potassium during flowering and fruiting.\n"
+        "9. Watch for powdery mildew, downy mildew, aphids, fruit fly, and wilt; improve airflow and remove infected debris.\n"
+        "10. Harvest when the field spot turns creamy yellow, tendril near the fruit dries, and rind sounds dull when tapped.",
+    ),
+    (
+        r"\b(cherry|cherries|stone fruit)\b.*\b(step|steps|plant|grow|growing|cultivat|care|orchard)?|"
+        r"\b(step|steps|plant|grow|growing|cultivat|care)\b.*\b(cherry|cherries|stone fruit)\b",
+        "Detailed cherry growing steps:\n"
+        "1. Choose a suitable type: sweet cherries need more space and often a pollinator; sour cherries are more self-fertile and compact.\n"
+        "2. Select a sunny site with 6-8 hours of direct light and good air movement.\n"
+        "3. Use deep, well-drained loam or sandy loam with pH around 6.0-7.0; avoid waterlogged clay.\n"
+        "4. Plant during dormancy, keeping the graft union above soil level.\n"
+        "5. Space trees by rootstock and type; dwarf trees need less space than standard trees.\n"
+        "6. Water deeply after planting and keep soil evenly moist during establishment.\n"
+        "7. Mulch 5-8 cm deep while keeping mulch away from the trunk.\n"
+        "8. Prune to an open canopy for light and airflow; remove dead, crossing, or diseased branches.\n"
+        "9. Fertilize lightly after growth starts; avoid excess nitrogen because it increases soft growth and disease risk.\n"
+        "10. Scout for brown rot, bacterial canker, aphids, fruit fly, and birds; use sanitation, netting, and local extension guidance.",
+    ),
+    (
+        r"\b(tomato).*(blight|spot|septoria|fung|yellow|brown)|\b(blight|septoria).*(tomato)\b",
+        "For tomato leaf spots or blight, remove infected lower leaves, avoid overhead watering, stake plants for airflow, mulch to reduce soil splash, and rotate away from tomato/potato/pepper for 2-3 seasons. Use copper or approved fungicide only according to label and local guidance.",
+    ),
+    (
+        r"\b(potato).*(blight|wilting|rot)|\b(blight).*(potato)\b",
+        "For potato blight risk, use certified seed, destroy volunteer plants, avoid late evening irrigation, hill soil for tuber protection, and remove infected foliage. Preventive fungicide timing matters most before wet, cool weather.",
+    ),
+    (
+        r"\b(rice).*(water|irrigation|fertilizer|nitrogen)|\b(paddy)\b",
+        "Rice usually needs controlled flooding or saturated soil early, then careful drainage near maturity. Split nitrogen into basal, tillering, and panicle stages, and avoid excess nitrogen when disease pressure is high.",
+    ),
+    (
+        r"\b(wheat).*(rust|fertilizer|irrigation)|\b(rust).*(wheat)\b",
+        "For wheat, prioritize timely irrigation at crown-root initiation, booting, and grain filling. Rust risk rises with humid weather; use resistant varieties, balanced nitrogen, and scout lower leaves early.",
+    ),
     (
         r"\b(fertilizer|fertiliz\w*|npk|nitrogen|phosphorus|potassium|compost|manure)\b",
         "Balanced NPK depends on crop stage: nitrogen supports leafy growth, phosphorus supports roots, and potassium supports flowering, fruiting, and stress tolerance. Use a soil test before applying fertilizer and avoid excess nitrogen during fruiting.",
@@ -69,6 +147,14 @@ GENERAL_RULES = [
     (
         r"\b(soil|ph|acid|alkaline)\b",
         "Most vegetables prefer soil pH around 6.0-7.0. Add organic matter to improve structure, drainage, and nutrient retention. Use lime or sulfur only after a soil test.",
+    ),
+    (
+        r"\b(seedling|transplant|nursery|germination)\b",
+        "For seedlings, use clean seed trays, light well-drained media, gentle watering, morning light, and good airflow. Avoid overwatering because damping-off disease spreads quickly in wet nursery conditions.",
+    ),
+    (
+        r"\b(organic|neem|biological|biofertilizer|ipm)\b",
+        "Organic and IPM programs work best when combined: resistant varieties, crop rotation, sanitation, beneficial habitat, compost, neem or biological products where appropriate, and regular scouting before pests reach damaging levels.",
     ),
 ]
 
@@ -107,7 +193,12 @@ def is_agriculture_or_app_query(question):
     greetings = {"hi", "hello", "hey", "help", "thanks", "thank you"}
     if text.lower() in greetings:
         return True
-    return bool(AGRICULTURE_TERMS.search(text))
+    return bool(AGRICULTURE_TERMS.search(text) or COMMON_CROP_PATTERN.search(text))
+
+
+def mentioned_common_crop(question):
+    match = COMMON_CROP_PATTERN.search(question or "")
+    return match.group(1).lower() if match else ""
 
 
 def _score_text(question, *parts):
@@ -246,11 +337,37 @@ def _disease_matches(question):
 def general_farming_answer(question):
     for pattern, answer in GENERAL_RULES:
         if re.search(pattern, question or "", re.I):
-            return answer, 0.62
+            return answer, 0.74
+    crop = mentioned_common_crop(question)
+    if crop:
+        return (
+            f"I do not have a full local guide for {crop.title()} yet. "
+            f"For {crop} farming, start with suitable local varieties, well-drained soil, "
+            "balanced organic matter, correct planting season, steady irrigation, weed control, "
+            "and weekly scouting for pests and disease. If online search or Gemini is configured, "
+            "I will use it for more crop-specific guidance.",
+            0.35,
+        )
     return (
         "I do not have a specific local answer for that yet. Ask about a crop, disease, fertilizer, irrigation, pest control, weather risk, or an AgroGuide app feature.",
         0.25,
     )
+
+
+def _rule_matches(question):
+    matches = []
+    for pattern, answer in GENERAL_RULES:
+        if re.search(pattern, question or "", re.I):
+            matches.append(
+                {
+                    "title": "AgroGuide farming rule",
+                    "answer": answer,
+                    "score": 0.9,
+                    "source": "AgroGuide local rules",
+                }
+            )
+            break
+    return matches
 
 
 def search_local_knowledge(question):
@@ -264,7 +381,11 @@ def search_local_knowledge(question):
             "is_relevant": False,
         }
 
-    matches = _app_feature_matches(question) + _crop_guide_matches(question) + _disease_matches(question)
+    rule_matches = _rule_matches(question)
+    disease_matches = _disease_matches(question)
+    matches = rule_matches + disease_matches + _app_feature_matches(question)
+    if not disease_matches:
+        matches += _crop_guide_matches(question)
     if not matches:
         fallback, confidence = general_farming_answer(question)
         weak = confidence < 0.5

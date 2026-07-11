@@ -6,7 +6,7 @@ from urllib3.util.retry import Retry
 
 
 logger = logging.getLogger(__name__)
-TRANSIENT_STATUS_CODES = (502, 503, 504)
+TRANSIENT_STATUS_CODES = (429, 502, 503, 504)
 MET_LOCATIONFORECAST_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
 MET_USER_AGENT = "AgroGuideApp/1.0"
 

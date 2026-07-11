@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 
 SYSTEM_INSTRUCTION = (
     "You are AgroGuide AI, a smart farming assistant. Only answer agriculture-related "
@@ -11,7 +12,13 @@ SYSTEM_INSTRUCTION = (
 
 AGRI_PATTERN = re.compile(
     r"\b(crop|farm|soil|plant|leaf|disease|pest|fertiliz|irrigat|harvest|"
-    r"seed|tomato|potato|corn|maize|weather|rain|humid|organic|npk|ph|"
+    r"seed|tomato|potato|corn|maize|cherry|cherries|watermelon|melon|"
+    r"mango|banana|citrus|orange|lemon|lime|grape|strawberry|blueberry|"
+    r"peach|pear|plum|apricot|avocado|coconut|papaya|pineapple|guava|"
+    r"pomegranate|okra|eggplant|brinjal|cabbage|cauliflower|broccoli|"
+    r"carrot|lettuce|spinach|bean|pea|lentil|chickpea|mustard|sunflower|"
+    r"sugarcane|cotton|tea|coffee|cocoa|cassava|yam|pumpkin|squash|zucchini|"
+    r"weather|rain|humid|organic|npk|ph|"
     r"blight|rust|mite|aphid|compost|manure|greenhouse|field|agri|grow|"
     r"sow|till|mulch|drip|spray|fungic|herbic|insect|weed|yield|"
     r"vegetable|fruit|orchard|vine|root|nitrogen|phosphor|potassium)\b",
@@ -23,14 +30,17 @@ GEMINI_MISSING_MESSAGE = (
     "(see .env.example) and restart the application."
 )
 
-DEFAULT_GEMINI_MODEL = "gemini-2.0-flash-lite"
-FALLBACK_GEMINI_MODEL = "gemini-2.0-flash"
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
+FALLBACK_GEMINI_MODEL = "gemini-2.5-flash"
 DEPRECATED_MODEL_ALIASES = {
     "gemini-pro": DEFAULT_GEMINI_MODEL,
     "gemini-1.0-pro": DEFAULT_GEMINI_MODEL,
     "gemini-1.5-flash": DEFAULT_GEMINI_MODEL,
+    "gemini-2.0-flash": DEFAULT_GEMINI_MODEL,
+    "gemini-2.0-flash-lite": DEFAULT_GEMINI_MODEL,
 }
 _logger = logging.getLogger("agroguide")
+_quota_block_until = 0
 
 
 def _normalize_model_name(model_name: str) -> str:
@@ -126,6 +136,53 @@ def _build_prompt(user_message: str, conversation=None) -> str:
     )
 
 
+def _build_rag_prompt(user_message: str, evidence=None, conversation=None, user_context=None) -> str:
+    sections = []
+    context_summary = (user_context or {}).get("summary", "").strip()
+    if context_summary:
+        sections.append(
+            "User AgroGuide context. Use only if relevant to the user's current crop/problem:\n"
+            + context_summary
+        )
+
+    recent = []
+    for msg in (conversation or [])[-8:]:
+        role = "Farmer" if msg.get("role") == "user" else "AgroGuide AI"
+        content = (msg.get("content") or "").strip()
+        if content:
+            recent.append(f"{role}: {content[:500]}")
+    if recent:
+        sections.append("Recent chat:\n" + "\n".join(recent))
+
+    evidence_lines = []
+    for idx, item in enumerate((evidence or [])[:8], start=1):
+        title = item.get("title") or item.get("name") or f"Source {idx}"
+        source = item.get("source") or item.get("provider") or "retrieved"
+        url = item.get("url") or ""
+        snippet = " ".join(str(item.get("snippet") or item.get("answer") or "").split())
+        if len(snippet) > 700:
+            snippet = snippet[:700].rsplit(" ", 1)[0] + "."
+        if snippet:
+            evidence_lines.append(f"[{idx}] {title} ({source}) {url}\n{snippet}")
+    if evidence_lines:
+        sections.append("Retrieved evidence:\n" + "\n\n".join(evidence_lines))
+
+    instructions = (
+        "Answer as AgroGuide AI using the retrieved evidence and recent chat context. "
+        "Stay strictly on agriculture/farming. If sources conflict, prefer local AgroGuide "
+        "knowledge and university/extension/government sources. Give practical steps. "
+        "Do not mention irrelevant user history. If evidence is weak, say what information "
+        "is missing and provide safe general farming guidance."
+    )
+    return (
+        instructions
+        + "\n\n"
+        + "\n\n".join(sections)
+        + "\n\nFarmer's current question:\n"
+        + user_message
+    )
+
+
 def _candidate_model_names(model_name: str):
     primary = _normalize_model_name(model_name)
     yield primary
@@ -138,12 +195,24 @@ def _is_quota_error(exc: Exception) -> bool:
     return "resource_exhausted" in message or "quota exceeded" in message
 
 
+def _is_transient_model_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return (
+        "503" in message
+        or "unavailable" in message
+        or "high demand" in message
+        or "temporarily" in message
+    )
+
+
 def generate_reply(user_message: str, conversation=None):
     """
     Returns (reply_text, error_message).
     When the API key is missing or the call fails, reply_text is None and
     error_message contains a user-friendly message (no crash).
     """
+    global _quota_block_until
+
     try:
         api_key, model_name = _gemini_settings()
     except RuntimeError:
@@ -154,6 +223,12 @@ def generate_reply(user_message: str, conversation=None):
 
     if not api_key:
         return None, GEMINI_MISSING_MESSAGE
+
+    if time.time() < _quota_block_until:
+        return (
+            None,
+            "AgroGuide AI is temporarily rate-limited, so I will use local knowledge or search.",
+        )
 
     if not is_agriculture_query(user_message):
         return (
@@ -206,11 +281,22 @@ def generate_reply(user_message: str, conversation=None):
         except Exception as exc:
             last_exc = exc
             last_failed_model = candidate_model
-            _logger.exception(
-                "Gemini generate_content failed for model %s.", candidate_model
-            )
             if _is_quota_error(exc):
+                _quota_block_until = time.time() + 60
+                _logger.warning(
+                    "Gemini quota exhausted for model %s; pausing Gemini calls briefly.",
+                    candidate_model,
+                )
                 break
+            if _is_transient_model_error(exc):
+                _logger.warning(
+                    "Gemini model %s is temporarily unavailable; trying fallback if available.",
+                    candidate_model,
+                )
+            else:
+                _logger.exception(
+                    "Gemini generate_content failed for model %s.", candidate_model
+                )
             if candidate_model == FALLBACK_GEMINI_MODEL:
                 break
             _logger.warning(
@@ -238,3 +324,13 @@ def generate_reply(user_message: str, conversation=None):
         f"AgroGuide AI is temporarily unavailable. ({exc.__class__.__name__}) "
         f"Check your API key, model name, and network, then try again.{hint}",
     )
+
+
+def generate_rag_reply(user_message: str, evidence=None, conversation=None, user_context=None):
+    prompt = _build_rag_prompt(
+        user_message,
+        evidence=evidence,
+        conversation=conversation,
+        user_context=user_context,
+    )
+    return generate_reply(prompt, conversation=[])

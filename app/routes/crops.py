@@ -1,11 +1,15 @@
-from flask import Blueprint, render_template, request
+import logging
+
+from flask import Blueprint, flash, render_template, request
 from flask_login import current_user, login_required
 
 from app import db
 from app.services import farming_rules
 from app.services.history_service import log_activity
+from app.services.user_context import recent_disease_context
 
 crops_bp = Blueprint("crops", __name__)
+logger = logging.getLogger("agroguide.crops")
 
 
 @crops_bp.route("/recommendation", methods=["GET", "POST"])
@@ -13,6 +17,7 @@ crops_bp = Blueprint("crops", __name__)
 def recommendation():
     result = None
     if request.method == "POST":
+        history_context = recent_disease_context(current_user.id)
         result = farming_rules.recommend_crops(
             soil_type=request.form.get("soil_type", ""),
             season=request.form.get("season", ""),
@@ -20,6 +25,8 @@ def recommendation():
             temperature=request.form.get("temperature"),
             rainfall=request.form.get("rainfall") or None,
             humidity=request.form.get("humidity") or None,
+            region=request.form.get("region", ""),
+            history_context=history_context,
         )
         top = result["recommendations"][0]["crop_name"] if result["recommendations"] else "Analysis"
         log_activity(
@@ -28,7 +35,12 @@ def recommendation():
             f"Crop recommendation: {top}",
             result,
         )
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            logger.exception("Failed to save crop recommendation history.")
+            flash("Recommendation was generated, but history could not be saved.", "warning")
 
     return render_template(
         "crops/recommendation.html",
@@ -45,6 +57,7 @@ def suitability():
     result = None
     crops = farming_rules.list_crops()
     if request.method == "POST":
+        history_context = recent_disease_context(current_user.id)
         result = farming_rules.check_suitability(
             crop_name=request.form.get("crop_name", ""),
             soil_type=request.form.get("soil_type", ""),
@@ -53,6 +66,7 @@ def suitability():
             temperature=request.form.get("temperature") or None,
             humidity=request.form.get("humidity") or None,
             location=request.form.get("location", ""),
+            history_context=history_context,
         )
         log_activity(
             current_user.id,
@@ -60,7 +74,12 @@ def suitability():
             f"Suitability: {result.get('crop_name', 'Crop')} — {result.get('label', '')}",
             result,
         )
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            logger.exception("Failed to save crop suitability history.")
+            flash("Suitability was generated, but history could not be saved.", "warning")
 
     return render_template(
         "crops/suitability.html",
@@ -87,6 +106,11 @@ def guide():
                 f"Guide: {guide_data['crop_name']}",
                 {"crop_key": guide_data["crop_key"]},
             )
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                logger.exception("Failed to save cultivation guide history.")
+                flash("Guide was loaded, but history could not be saved.", "warning")
 
     return render_template("crops/guide.html", crops=crops, guide=guide_data, crop_sel=crop_sel)

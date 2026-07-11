@@ -29,9 +29,71 @@ def _norm_crop(crop):
     return (crop or "").strip().lower().replace(" ", "_").replace("-", "_")
 
 
-def _score_crop(guide, soil, season, water, temp, rainfall=None, humidity=None):
+def _region_profile(region):
+    text = (region or "").lower()
+    if any(term in text for term in ("terai", "plain", "lowland", "tropical", "hot")):
+        return {
+            "name": "warm lowland",
+            "temp_shift": 2,
+            "notes": ["Warm lowland conditions raise heat stress and pest pressure."],
+        }
+    if any(term in text for term in ("hill", "hilly", "mid-hill", "valley")):
+        return {
+            "name": "mid-hill",
+            "temp_shift": 0,
+            "notes": ["Mid-hill conditions favor cool-season vegetables but vary by slope."],
+        }
+    if any(term in text for term in ("mountain", "highland", "cold", "himal")):
+        return {
+            "name": "cool highland",
+            "temp_shift": -3,
+            "notes": ["Cool highland conditions shorten warm-season crop windows."],
+        }
+    if any(term in text for term in ("coastal", "humid", "wet")):
+        return {
+            "name": "humid region",
+            "temp_shift": 0,
+            "notes": ["Humid regions need stronger fungal disease prevention."],
+        }
+    if any(term in text for term in ("dry", "arid", "drought")):
+        return {
+            "name": "dry region",
+            "temp_shift": 1,
+            "notes": ["Dry regions need water-conserving irrigation and mulch."],
+        }
+    return {"name": "", "temp_shift": 0, "notes": []}
+
+
+def _history_adjustment(crop_key, history_context):
+    if not history_context or not history_context.get("has_history"):
+        return 0, []
+    crop = crop_key.lower()
+    notes = []
+    score_delta = 0
+    if crop in history_context.get("crops", []):
+        score_delta -= 4
+        notes.append(
+            history_context["risk_note"]
+            + " Use resistant varieties, sanitation, rotation, and closer scouting."
+        )
+    return score_delta, notes
+
+
+def _score_crop(
+    guide,
+    soil,
+    season,
+    water,
+    temp,
+    rainfall=None,
+    humidity=None,
+    region=None,
+    crop_key="",
+    history_context=None,
+):
     score = 50.0
     reasons = []
+    region_info = _region_profile(region)
 
     soil_l = (soil or "").lower()
     if any(s in soil_l for s in guide.get("soils", [])):
@@ -67,12 +129,15 @@ def _score_crop(guide, soil, season, water, temp, rainfall=None, humidity=None):
     if temp is not None:
         try:
             t = float(temp)
+            adjusted_t = t + region_info["temp_shift"]
             if tmin <= t <= tmax:
                 score += 15
                 reasons.append(f"Temperature ({t}C) is in optimal range ({tmin}-{tmax}C).")
-            elif tmin - 5 <= t <= tmax + 5:
+            elif tmin - 5 <= adjusted_t <= tmax + 5:
                 score += 5
-                reasons.append(f"Temperature ({t}C) is marginal; use season extension or shade.")
+                reasons.append(
+                    f"Temperature ({t}C) is marginal after regional adjustment; use shade, mulch, or timing changes."
+                )
             else:
                 score -= 15
                 reasons.append(f"Temperature ({t}C) is outside ideal range ({tmin}-{tmax}C).")
@@ -104,15 +169,36 @@ def _score_crop(guide, soil, season, water, temp, rainfall=None, humidity=None):
         except ValueError:
             pass
 
+    if region_info["notes"]:
+        reasons.extend(region_info["notes"])
+        if region_info["name"] == "humid region":
+            score -= 3
+        elif region_info["name"] == "dry region" and guide.get("water") == "high":
+            score -= 6
+            reasons.append("This crop has high water demand, which is risky for dry regions.")
+
+    history_delta, history_notes = _history_adjustment(crop_key, history_context)
+    score += history_delta
+    reasons.extend(history_notes)
+
     score = max(0, min(100, score))
     return score, reasons
 
 
-def recommend_crops(soil_type, season, water_availability, temperature, rainfall=None, humidity=None):
+def recommend_crops(
+    soil_type,
+    season,
+    water_availability,
+    temperature,
+    rainfall=None,
+    humidity=None,
+    region=None,
+    history_context=None,
+):
     try:
         from app.services.crop_model import recommend_crops as model_recommend_crops
 
-        return model_recommend_crops(
+        result = model_recommend_crops(
             soil_type,
             season,
             water_availability,
@@ -120,6 +206,28 @@ def recommend_crops(soil_type, season, water_availability, temperature, rainfall
             rainfall=rainfall,
             humidity=humidity,
         )
+        if region or history_context:
+            guides = _load_guides()
+            for rec in result.get("recommendations", []):
+                guide = guides.get(rec["crop_key"], {})
+                extra_score, extra_reasons = _score_crop(
+                    guide,
+                    soil_type,
+                    season,
+                    water_availability,
+                    temperature,
+                    rainfall,
+                    humidity,
+                    region=region,
+                    crop_key=rec["crop_key"],
+                    history_context=history_context,
+                )
+                rec["score"] = round((rec["score"] * 0.75) + (extra_score * 0.25), 1)
+                rec["reasons"].extend(extra_reasons[-3:])
+            result["recommendations"].sort(key=lambda item: item["score"], reverse=True)
+        result["inputs"]["region"] = region
+        result["history_context"] = history_context or {}
+        return result
     except Exception:
         _logger.exception("Local crop model failed; falling back to rule scorer.")
 
@@ -127,7 +235,16 @@ def recommend_crops(soil_type, season, water_availability, temperature, rainfall
     results = []
     for key, guide in guides.items():
         score, reasons = _score_crop(
-            guide, soil_type, season, water_availability, temperature, rainfall, humidity
+            guide,
+            soil_type,
+            season,
+            water_availability,
+            temperature,
+            rainfall,
+            humidity,
+            region=region,
+            crop_key=key,
+            history_context=history_context,
         )
         tips = [
             guide.get("sowing", ""),
@@ -152,11 +269,22 @@ def recommend_crops(soil_type, season, water_availability, temperature, rainfall
             "temperature": temperature,
             "rainfall": rainfall,
             "humidity": humidity,
+            "region": region,
         },
+        "history_context": history_context or {},
     }
 
 
-def check_suitability(crop_name, soil_type, season, water_availability, temperature=None, humidity=None, location=None):
+def check_suitability(
+    crop_name,
+    soil_type,
+    season,
+    water_availability,
+    temperature=None,
+    humidity=None,
+    location=None,
+    history_context=None,
+):
     guides = _load_guides()
     key = _norm_crop(crop_name)
     if key not in guides:
@@ -175,7 +303,16 @@ def check_suitability(crop_name, soil_type, season, water_availability, temperat
 
     guide = guides[key]
     score, reasons = _score_crop(
-        guide, soil_type, season, water_availability, temperature, None, humidity
+        guide,
+        soil_type,
+        season,
+        water_availability,
+        temperature,
+        None,
+        humidity,
+        region=location,
+        crop_key=key,
+        history_context=history_context,
     )
 
     if score >= 75:
@@ -197,6 +334,8 @@ def check_suitability(crop_name, soil_type, season, water_availability, temperat
     explanation = " ".join(reasons)
     if location:
         explanation += f" Location context: {location}."
+    if history_context and history_context.get("has_history"):
+        explanation += " " + history_context["risk_note"]
 
     return {
         "crop_name": guide["name"],
@@ -236,7 +375,7 @@ def get_cultivation_guide(crop_name):
     }
 
 
-def irrigation_advice(crop_name, growth_stage, soil_type, rainfall=None):
+def irrigation_advice(crop_name, growth_stage, soil_type, rainfall=None, history_context=None):
     guides = _load_guides()
     key = _norm_crop(crop_name)
     if key not in guides:
@@ -292,6 +431,15 @@ def irrigation_advice(crop_name, growth_stage, soil_type, rainfall=None):
         over = "Avoid prolonged saturated soil; improve drainage in low spots."
         under = "Check soil moisture at 10 cm depth before irrigating."
 
+    history_note = ""
+    if history_context and key.split("_", 1)[0] in history_context.get("crops", []):
+        history_note = (
+            history_context["risk_note"]
+            + " Prefer drip irrigation, morning watering, and dry foliage to reduce disease spread."
+        )
+        if needed:
+            freq += "; keep leaves dry"
+
     return {
         "crop_name": g["name"],
         "irrigation_needed": needed,
@@ -299,6 +447,7 @@ def irrigation_advice(crop_name, growth_stage, soil_type, rainfall=None):
         "stage_note": note,
         "overwatering_warning": over,
         "underwatering_warning": under,
+        "history_note": history_note,
         "water_saving_tips": [
             "Use drip irrigation to target root zones.",
             "Irrigate early morning to reduce evaporation.",
@@ -308,7 +457,16 @@ def irrigation_advice(crop_name, growth_stage, soil_type, rainfall=None):
     }
 
 
-def fertilizer_advice(crop_name, growth_stage, soil_type, n=None, p=None, k=None, ph=None):
+def fertilizer_advice(
+    crop_name,
+    growth_stage,
+    soil_type,
+    n=None,
+    p=None,
+    k=None,
+    ph=None,
+    history_context=None,
+):
     guides = _load_guides()
     key = _norm_crop(crop_name)
     if key not in guides:
@@ -345,6 +503,14 @@ def fertilizer_advice(crop_name, growth_stage, soil_type, n=None, p=None, k=None
     if n is not None and p is not None and k is not None:
         nutrient += f" Your reported NPK ({n}-{p}-{k}) should be adjusted to stage needs."
 
+    history_note = ""
+    if history_context and key.split("_", 1)[0] in history_context.get("crops", []):
+        history_note = (
+            history_context["risk_note"]
+            + " Avoid excess nitrogen because soft leafy growth can worsen disease susceptibility."
+        )
+        nutrient += " Keep nitrogen moderate due to recent disease history."
+
     return {
         "crop_name": g["name"],
         "fertilizer_type": fert_type,
@@ -353,6 +519,7 @@ def fertilizer_advice(crop_name, growth_stage, soil_type, n=None, p=None, k=None
         "organic_alternative": organic,
         "safety_warning": safety,
         "base_guide": g.get("fertilizer", ""),
+        "history_note": history_note,
     }
 
 

@@ -5,6 +5,7 @@
   const typing = document.getElementById('typing-indicator');
   const sendBtn = document.getElementById('chat-send');
   const clearBtn = document.getElementById('clear-chat');
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
   if (!form || !input || !messages) return;
 
   function scrollBottom() {
@@ -12,12 +13,17 @@
   }
 
   function badgeLabel(sourceType) {
+    if (sourceType === 'rag') return 'RAG Answer';
     if (sourceType === 'internet') return 'Internet Result';
+    if (sourceType === 'gemini') return 'Gemini';
     if (sourceType === 'fallback') return 'Fallback';
     return 'Local Knowledge';
   }
 
   function badgeClass(sourceType) {
+    if (sourceType === 'rag') {
+      return 'border-violet-400/50 text-violet-700 dark:text-violet-300';
+    }
     if (sourceType === 'internet') {
       return 'border-sky-400/50 text-sky-700 dark:text-sky-300';
     }
@@ -94,7 +100,10 @@
   }
 
   async function post(url) {
-    const res = await fetch(url, { method: 'POST' });
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+    });
     if (!res.ok) throw new Error('Request failed');
     return res.json();
   }
@@ -109,7 +118,7 @@
     try {
       const res = await fetch('/chatbot/message', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
         body: JSON.stringify({ message: text }),
       });
       const data = await res.json();

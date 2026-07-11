@@ -3,7 +3,7 @@
 {% block content %}
 {% if not model_ready %}
 <div class="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
-  Model files not found. Place <code>plant_disease_checkpoint.pth</code> and <code>class_indices.json</code> in <code>app/ml_models/</code> then restart the app.
+  AI model API is not configured. Set <code>MODEL_API_URL</code> in <code>.env</code> then restart the app.
 </div>
 {% endif %}
 
@@ -28,8 +28,8 @@
   <div class="card bg-gradient-to-br from-agro-50 to-white dark:from-agro-950 dark:to-slate-900">
     <h3 class="font-semibold mb-3">How it works</h3>
     <ul class="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
-      <li>MobileNetV2 trained on plant disease classes</li>
-      <li>224×224 preprocessing with ImageNet normalization</li>
+      <li>Leaf images are sent securely to the deployed AWS model API</li>
+      <li>The remote model returns disease class and confidence</li>
       <li>Full disease knowledge base with treatments</li>
       <li>Results saved to your scan history</li>
     </ul>

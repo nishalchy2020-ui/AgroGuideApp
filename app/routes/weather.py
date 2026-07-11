@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, flash, render_template, request
 from flask_login import current_user, login_required
 
@@ -7,6 +9,7 @@ from app.services import weather_service
 from app.services.history_service import log_activity
 
 weather_bp = Blueprint("weather", __name__)
+logger = logging.getLogger("agroguide.weather")
 
 
 @weather_bp.route("/", methods=["GET", "POST"])
@@ -77,8 +80,15 @@ def index():
                         },
                         ref_id=record.id,
                     )
-                    db.session.commit()
+                    try:
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
+                        logger.exception("Failed to save weather history for user_id=%s", current_user.id)
+                        flash("Weather loaded, but history could not be saved.", "warning")
             except Exception as e:
+                db.session.rollback()
+                logger.exception("Weather request failed for query=%s", query)
                 flash(f"Weather service error: {e}", "error")
 
     history = (
