@@ -84,6 +84,10 @@ def register():
                 db.session.rollback()
                 logger.exception("Registration failed for email=%s", email)
                 flash("Registration could not be completed. Please try again.", "error")
+            except Exception:
+                db.session.rollback()
+                logger.exception("Unexpected registration failure for email=%s", email)
+                flash("Registration could not be completed. Please try again.", "error")
 
     return render_template("auth/register.html")
 
@@ -104,6 +108,11 @@ def login():
         except SQLAlchemyError:
             db.session.rollback()
             logger.exception("Login database lookup failed for email=%s", email)
+            flash("Login is temporarily unavailable. Please try again shortly.", "error")
+            return render_template("auth/login.html"), 503
+        except Exception:
+            db.session.rollback()
+            logger.exception("Unexpected login lookup failure for email=%s", email)
             flash("Login is temporarily unavailable. Please try again shortly.", "error")
             return render_template("auth/login.html"), 503
 
