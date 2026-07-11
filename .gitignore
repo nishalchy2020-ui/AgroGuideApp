@@ -30,6 +30,7 @@ flask_session/
 # =========================
 *.db
 *.sqlite3
+schema.sql
 
 # =========================
 # PyTorch / AI Models

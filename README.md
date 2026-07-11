@@ -85,7 +85,8 @@ Required / recommended variables (loaded via `python-dotenv` in `config.py`):
 | `GEMINI_MODEL` | Default `gemini-2.0-flash-lite` for the free tier; fallback `gemini-2.0-flash` |
 | `SEARCH_PROVIDER` | Internet search provider for hybrid chatbot, default `tavily` |
 | `SEARCH_API_KEY` | Search API key for Tavily, SerpAPI, Brave Search, or Google Custom Search |
-| `DATABASE_URL` | SQLite path or other DB URL |
+| `DATABASE_URL` | PostgreSQL connection URL; if unset, the app builds one from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` |
+| `AUTO_INIT_DB` | Creates database tables at startup when true; keep false in production after applying `schema.sql` |
 | `PORT` | Server port (default `5000`) |
 
 The app starts without `SEARCH_API_KEY`; the chatbot uses local AgroGuide knowledge and fallback farming guidance instead of crashing.

@@ -77,9 +77,6 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
         "pool_recycle": getenv_int("DB_POOL_RECYCLE_SECONDS", 1800),
-        "connect_args": {
-            "connect_timeout": getenv_int("DB_CONNECT_TIMEOUT_SECONDS", 10),
-        },
     }
     AUTO_INIT_DB = getenv_bool("AUTO_INIT_DB", default=False)
     LOG_LEVEL = getenv("LOG_LEVEL", "INFO").upper()
