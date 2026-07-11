@@ -13,9 +13,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 try:
-    from run import app  # noqa: E402
+    from run import app as flask_app  # noqa: E402
 
-    @app.get("/_vercel_probe")
+    @flask_app.get("/_vercel_probe")
     def _vercel_probe():
         from flask import jsonify
 
@@ -34,7 +34,7 @@ try:
             }
         )
 
-    @app.get("/_vercel_db_probe")
+    @flask_app.get("/_vercel_db_probe")
     def _vercel_db_probe():
         from flask import jsonify
         from sqlalchemy import text
@@ -68,9 +68,12 @@ except Exception as exc:
         "traceback_tail": traceback.format_exc().splitlines()[-8:],
     }
 
-    app = Flask(__name__)
+    flask_app = Flask(__name__)
 
-    @app.route("/", defaults={"path": ""})
-    @app.route("/<path:path>")
+    @flask_app.route("/", defaults={"path": ""})
+    @flask_app.route("/<path:path>")
     def _startup_failure(path):
         return jsonify(startup_error), 500
+
+app = flask_app
+application = app
