@@ -25,14 +25,64 @@
     <video id="camera-stream" class="hidden w-full rounded-xl mt-4" autoplay playsinline></video>
     <canvas id="camera-canvas" class="hidden"></canvas>
   </div>
-  <div class="card bg-gradient-to-br from-agro-50 to-white dark:from-agro-950 dark:to-slate-900">
-    <h3 class="font-semibold mb-3">How it works</h3>
-    <ul class="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
-      <li>Leaf images are sent securely to the deployed AWS model API</li>
-      <li>The remote model returns disease class and confidence</li>
-      <li>Full disease knowledge base with treatments</li>
-      <li>Results saved to your scan history</li>
-    </ul>
+  <div class="space-y-6">
+    <div class="card bg-gradient-to-br from-agro-50 to-white dark:from-agro-950 dark:to-slate-900">
+      <h3 class="font-semibold mb-3">How it works</h3>
+      <ul class="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
+        <li>Your leaf image is sent to our trained AI disease detection model.</li>
+        <li>The model analyzes the visible leaf patterns and returns the most likely class.</li>
+        <li>AgroGuide shows the detected plant or disease, confidence score, severity, and treatment guidance.</li>
+        <li>The result is saved to your scan history so you can review it later.</li>
+      </ul>
+    </div>
+
+    <div class="card border-l-4 border-amber-500">
+      <h3 class="font-semibold mb-3">Best supported detections</h3>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        AgroGuide is most reliable for clear leaf images from these trained plant categories and disease classes.
+        If the confidence is below 60%, treat the result as uncertain and ask an agriculture expert before applying pesticide or treatment.
+      </p>
+      <div class="grid sm:grid-cols-2 gap-4 text-sm">
+        <div>
+          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Apple</h4>
+          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
+            <li>Apple scab</li>
+            <li>Black rot</li>
+            <li>Cedar apple rust</li>
+            <li>Healthy leaves</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Corn / maize</h4>
+          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
+            <li>Gray leaf spot</li>
+            <li>Common rust</li>
+            <li>Northern leaf blight</li>
+            <li>Healthy leaves</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Pepper and potato</h4>
+          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
+            <li>Pepper bacterial spot</li>
+            <li>Healthy pepper leaves</li>
+            <li>Potato early blight</li>
+            <li>Potato late blight</li>
+            <li>Healthy potato leaves</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-medium text-agro-700 dark:text-agro-400 mb-2">Tomato</h4>
+          <ul class="text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
+            <li>Bacterial spot, early blight, and late blight</li>
+            <li>Leaf mold and Septoria leaf spot</li>
+            <li>Spider mites and target spot</li>
+            <li>Yellow leaf curl virus and mosaic virus</li>
+            <li>Healthy leaves</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
