@@ -181,8 +181,8 @@ def predict():
         filename, path = save_upload(file)
         result = predict_leaf_disease(
             path,
-            filename=file.filename,
-            content_type=file.content_type or "image/jpeg",
+            filename=filename,
+            content_type="image/jpeg",
         )
 
     except ValueError as e:

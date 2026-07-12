@@ -12,14 +12,20 @@
     <h2 class="text-lg font-semibold mb-4">Upload or capture leaf image</h2>
     <form id="detect-form" action="{{ url_for('detection.predict') }}" method="post" enctype="multipart/form-data" class="space-y-4">
       <div id="drop-zone" class="drop-zone">
-        <input type="file" id="image-input" name="image" accept="image/*" capture="environment" class="hidden">
-        <p class="text-slate-500 text-sm">Drag & drop image here, or click to browse</p>
+        <input type="file" id="image-input" name="image" accept="image/*" class="hidden">
+        <p class="text-slate-500 text-sm">Choose a photo from your phone or drag one here</p>
         <p class="text-xs text-slate-400 mt-2">PNG, JPG, WEBP · Max 8MB</p>
       </div>
       <img id="preview" class="hidden max-h-64 mx-auto rounded-xl object-contain" alt="Preview">
       <div class="flex flex-wrap gap-3">
         <button type="button" id="camera-btn" class="btn-secondary">Use camera</button>
-        <button type="submit" class="btn-primary" {% if not model_ready %}disabled{% endif %}>Analyze Plant</button>
+        <button type="submit" id="analyze-btn" class="btn-primary" {% if not model_ready %}disabled{% endif %}>Analyze Plant</button>
+      </div>
+      <div id="upload-status" class="hidden p-3 rounded-xl bg-agro-500/10 text-agro-700 dark:text-agro-400 text-sm" role="status" aria-live="polite">
+        <div class="flex items-center gap-3">
+          <span class="inline-block h-5 w-5 rounded-full border-2 border-agro-500"></span>
+          <span id="upload-status-text">Preparing image…</span>
+        </div>
       </div>
     </form>
     <video id="camera-stream" class="hidden w-full rounded-xl mt-4" autoplay playsinline></video>
