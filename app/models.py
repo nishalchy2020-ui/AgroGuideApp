@@ -18,6 +18,11 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    is_email_verified = db.Column(db.Boolean, nullable=False, default=False)
+    email_verification_token = db.Column(db.String(128), nullable=True, index=True)
+    email_verification_expires_at = db.Column(db.DateTime, nullable=True)
+    password_reset_token = db.Column(db.String(128), nullable=True, index=True)
+    password_reset_expires_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
 
     scans = db.relationship(
@@ -164,6 +169,66 @@ def ensure_chatbot_message_schema():
             text(
                 "ALTER TABLE chatbot_messages "
                 "ADD COLUMN source_type VARCHAR(32) NOT NULL DEFAULT 'local'"
+            )
+        )
+    db.session.commit()
+
+
+def ensure_user_security_schema():
+    """Add auth security columns for existing databases."""
+    inspector = inspect(db.engine)
+    if "users" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    dialect = db.engine.dialect.name
+
+    if "is_email_verified" not in columns:
+        if dialect == "postgresql":
+            db.session.execute(
+                text(
+                    "ALTER TABLE users "
+                    "ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN NOT NULL DEFAULT TRUE"
+                )
+            )
+        else:
+            db.session.execute(
+                text(
+                    "ALTER TABLE users "
+                    "ADD COLUMN is_email_verified BOOLEAN NOT NULL DEFAULT 1"
+                )
+            )
+
+    column_specs = {
+        "email_verification_token": "VARCHAR(128)",
+        "email_verification_expires_at": "TIMESTAMP",
+        "password_reset_token": "VARCHAR(128)",
+        "password_reset_expires_at": "TIMESTAMP",
+    }
+    for column_name, column_type in column_specs.items():
+        if column_name not in columns:
+            if dialect == "postgresql":
+                db.session.execute(
+                    text(
+                        f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {column_name} {column_type}"
+                    )
+                )
+            else:
+                db.session.execute(
+                    text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}")
+                )
+
+    if dialect == "postgresql":
+        db.session.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_users_email_verification_token "
+                "ON users(email_verification_token)"
+            )
+        )
+        db.session.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_users_password_reset_token "
+                "ON users(password_reset_token)"
             )
         )
     db.session.commit()

@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<h1 style="margin:0 0 12px;font-size:24px;">Disease outbreak alert</h1>
+<p style="margin:0 0 16px;line-height:1.6;color:#334155;">Hi {{ user.name }}, AgroGuide detected a possible local outbreak pattern for <strong>{{ alert.disease_label }}</strong>.</p>
+<p style="margin:0 0 16px;line-height:1.6;color:#334155;">{{ alert.match_count }} reports were found near {{ alert.location_name }} within the configured monitoring window.</p>
+<p style="margin:0;line-height:1.6;color:#334155;">Inspect nearby crops, avoid unnecessary pesticide use, and contact a local agriculture expert if symptoms match your field.</p>
+{% endblock %}

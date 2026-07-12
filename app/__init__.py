@@ -52,12 +52,18 @@ def create_app(config_class=None):
     _log_config_status(app)
     _register_error_handlers(app)
 
+    with app.app_context():
+        from app.models import ensure_user_security_schema
+
+        ensure_user_security_schema()
+
     if app.config.get("AUTO_INIT_DB"):
         with app.app_context():
             db.create_all()
-            from app.models import ensure_chatbot_message_schema
+            from app.models import ensure_chatbot_message_schema, ensure_user_security_schema
 
             ensure_chatbot_message_schema()
+            ensure_user_security_schema()
             _seed_defaults(app)
     else:
         app.logger.info(
@@ -197,6 +203,7 @@ def _seed_defaults(app):
                         app.config["DEFAULT_ADMIN_PASSWORD"]
                     ),
                     is_admin=True,
+                    is_email_verified=True,
                 ),
             )
 

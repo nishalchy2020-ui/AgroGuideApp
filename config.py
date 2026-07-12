@@ -111,6 +111,24 @@ class Config:
     )
     REMEMBER_COOKIE_REFRESH_EACH_REQUEST = True
     SESSION_REFRESH_EACH_REQUEST = True
+    EMAIL_VERIFICATION_TOKEN_MINUTES = getenv_int(
+        "EMAIL_VERIFICATION_TOKEN_MINUTES", 1440
+    )
+    PASSWORD_RESET_TOKEN_MINUTES = getenv_int("PASSWORD_RESET_TOKEN_MINUTES", 15)
+    PUBLIC_BASE_URL = getenv("PUBLIC_BASE_URL", "")
+
+    NODEMAILER_ENDPOINT = getenv("NODEMAILER_ENDPOINT", "")
+    NODEMAILER_API_KEY = getenv("NODEMAILER_API_KEY", "")
+    MAIL_FROM = getenv("MAIL_FROM", "AgroGuide <no-reply@agroguide.local>")
+    SMTP_HOST = getenv("SMTP_HOST", "")
+    SMTP_PORT = getenv_int("SMTP_PORT", 587)
+    SMTP_USER = getenv("SMTP_USER", "")
+    SMTP_PASSWORD = getenv("SMTP_PASSWORD", "")
+    SMTP_USE_TLS = getenv_bool("SMTP_USE_TLS", default=True)
+
+    OUTBREAK_ALERT_THRESHOLD = getenv_int("OUTBREAK_ALERT_THRESHOLD", 3)
+    OUTBREAK_ALERT_RADIUS_KM = getenv_int("OUTBREAK_ALERT_RADIUS_KM", 25)
+    OUTBREAK_ALERT_WINDOW_HOURS = getenv_int("OUTBREAK_ALERT_WINDOW_HOURS", 72)
 
     # Uploaded files must also use /tmp on Vercel.
     UPLOAD_FOLDER = Path(

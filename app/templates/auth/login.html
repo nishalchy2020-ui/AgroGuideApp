@@ -17,6 +17,7 @@
       <label class="flex items-center gap-2 text-sm text-agro-700 dark:text-agro-400"><input type="checkbox" name="admin_login" class="rounded"> Admin login</label>
       <button type="submit" class="btn-primary w-full" data-loading>{{ icon('log-in', 'w-4 h-4') }} Sign in</button>
     </form>
+    <p class="text-center text-sm mt-4"><a href="{{ url_for('auth.forgot_password') }}" class="text-agro-600 font-medium">Forgot password?</a></p>
     <p class="text-center text-sm mt-6 text-slate-500">No account? <a href="{{ url_for('auth.register') }}" class="text-agro-600 font-medium">Register</a></p>
   </div>
 </div>

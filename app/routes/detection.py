@@ -14,6 +14,7 @@ from app.services.model_api_service import (
     is_model_api_configured,
     predict_leaf_disease,
 )
+from app.services.outbreak_service import check_outbreak_for_scan
 from app.utils.helpers import humanize_class_name, save_upload
 
 detection_bp = Blueprint("detection", __name__)
@@ -251,6 +252,12 @@ def predict():
         logger.exception("Failed to save scan result for user_id=%s", current_user.id)
         flash("Prediction succeeded, but saving the result failed. Please try again.", "error")
         return redirect(url_for("detection.index"))
+
+    try:
+        check_outbreak_for_scan(scan)
+    except Exception:
+        db.session.rollback()
+        logger.exception("Disease outbreak check failed for scan_id=%s", scan.id)
 
     return render_template(
         "detection/result.html",
