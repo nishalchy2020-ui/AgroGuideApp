@@ -229,10 +229,10 @@ def verify_email(token):
     except Exception:
         logger.exception("Welcome email failed for user_id=%s", user.id)
     return _auth_response(
-        "Email verified successfully. You can now log in.",
+        "Your email is verified. Please sign in.",
         "success",
         200,
-        template="auth/login.html",
+        redirect_to=url_for("auth.login"),
     )
 
 
