@@ -45,6 +45,68 @@
     if (empty) empty.remove();
   }
 
+  function escapeHtml(value) {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatInlineMarkdown(value) {
+    return escapeHtml(value)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  }
+
+  function renderMarkdown(value) {
+    const lines = value.replace(/\r\n?/g, '\n').split('\n');
+    const html = [];
+    let listType = null;
+
+    function closeList() {
+      if (listType) html.push(`</${listType}>`);
+      listType = null;
+    }
+
+    lines.forEach((line) => {
+      const unordered = line.match(/^\s*[-+]\s+(.+)$/);
+      const ordered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+      const heading = line.match(/^\s*(#{1,3})\s+(.+)$/);
+      const nextListType = unordered ? 'ul' : ordered ? 'ol' : null;
+
+      if (nextListType) {
+        if (listType !== nextListType) {
+          closeList();
+          listType = nextListType;
+          html.push(`<${listType}>`);
+        }
+        html.push(`<li>${formatInlineMarkdown((unordered || ordered)[1])}</li>`);
+        return;
+      }
+
+      closeList();
+      if (heading) {
+        const level = heading[1].length + 2;
+        html.push(`<h${level}>${formatInlineMarkdown(heading[2])}</h${level}>`);
+      } else if (line.trim()) {
+        html.push(`<p>${formatInlineMarkdown(line)}</p>`);
+      }
+    });
+    closeList();
+    return html.join('');
+  }
+
+  function formatSavedMessages() {
+    messages.querySelectorAll('[data-markdown="true"]').forEach((bubble) => {
+      bubble.innerHTML = renderMarkdown(bubble.textContent.trim());
+    });
+  }
+
   function append(role, text, options = {}) {
     removeEmptyState();
     const sourceType = options.sourceType || 'local';
@@ -75,13 +137,18 @@
 
     const bubble = document.createElement('div');
     bubble.className =
-      'whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed ' +
+      'chat-message-content whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed ' +
       (role === 'user'
         ? 'bg-agro-600 text-white'
         : options.isError
           ? 'glass-card border border-amber-500/40 text-amber-800 dark:text-amber-200'
           : 'glass-card');
-    bubble.textContent = text;
+    if (role === 'user') {
+      bubble.textContent = text;
+    } else {
+      bubble.dataset.markdown = 'true';
+      bubble.innerHTML = renderMarkdown(text);
+    }
 
     column.appendChild(meta);
     column.appendChild(bubble);
@@ -174,5 +241,6 @@
     });
   }
 
+  formatSavedMessages();
   scrollBottom();
 })();

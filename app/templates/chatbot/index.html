@@ -33,7 +33,7 @@
             {{ icon('trash-2', 'w-3.5 h-3.5') }}
           </button>
         </div>
-        <div class="whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed {% if msg.role == 'user' %}bg-agro-600 text-white{% else %}glass-card{% endif %}">
+        <div class="chat-message-content whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed {% if msg.role == 'user' %}bg-agro-600 text-white{% else %}glass-card{% endif %}"{% if msg.role != 'user' %} data-markdown="true"{% endif %}>
           {{ msg.display_message }}
         </div>
       </div>
@@ -53,5 +53,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chatbot.js', v='3') }}"></script>
 {% endblock %}

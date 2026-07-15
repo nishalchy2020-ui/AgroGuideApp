@@ -1,6 +1,4 @@
-import base64
 import logging
-import mimetypes
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -117,12 +115,6 @@ def normalize_confidence_percent(value):
         confidence *= 100
 
     return max(0.0, min(confidence, 100.0))
-
-
-def image_data_url(path):
-    content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
-    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f"data:{content_type};base64,{encoded}"
 
 
 @detection_bp.route("/")
@@ -259,17 +251,9 @@ def predict():
         db.session.rollback()
         logger.exception("Disease outbreak check failed for scan_id=%s", scan.id)
 
-    return render_template(
-        "detection/result.html",
-        scan=scan,
-        knowledge=knowledge,
-        badge_class=severity_badge_class(severity),
-        confidence_percent=normalize_confidence_percent(scan.confidence),
-        api_result=result.get("raw_response", {}),
-        additional_info=result.get("additional_info", {}),
-        image_src=image_data_url(path),
-        image_url=url_for("main.serve_upload", filename=filename),
-    )
+    # Use POST/Redirect/GET so refreshing the result page never repeats the
+    # upload POST or sends a GET request to this POST-only endpoint.
+    return redirect(url_for("detection.result_detail", scan_id=scan.id))
 
 
 @detection_bp.route("/result/<int:scan_id>")
