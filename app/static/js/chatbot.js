@@ -74,7 +74,7 @@
     }
 
     lines.forEach((line) => {
-      const unordered = line.match(/^\s*[-+]\s+(.+)$/);
+      const unordered = line.match(/^\s*[-+*]\s+(.+)$/);
       const ordered = line.match(/^\s*\d+[.)]\s+(.+)$/);
       const heading = line.match(/^\s*(#{1,3})\s+(.+)$/);
       const nextListType = unordered ? 'ul' : ordered ? 'ol' : null;
