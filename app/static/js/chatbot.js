@@ -158,6 +158,46 @@
     }
   }
 
+  function createStreamingRenderer(bubble) {
+    const queue = [];
+    const waiters = [];
+    let renderedText = '';
+    let running = false;
+
+    function resolveWaiters() {
+      if (running || queue.length) return;
+      while (waiters.length) waiters.shift()();
+    }
+
+    async function pump() {
+      if (running) return;
+      running = true;
+      while (queue.length) {
+        renderedText += queue.shift();
+        bubble.innerHTML = renderMarkdown(renderedText);
+        scrollBottom();
+        await new Promise((resolve) => setTimeout(resolve, 22));
+      }
+      running = false;
+      resolveWaiters();
+    }
+
+    return {
+      enqueue(text) {
+        const tokens = (text || '').match(/\S+\s*|\s+/g) || [];
+        queue.push(...tokens);
+        pump();
+      },
+      text() {
+        return renderedText + queue.join('');
+      },
+      flush() {
+        if (!running && !queue.length) return Promise.resolve();
+        return new Promise((resolve) => waiters.push(resolve));
+      },
+    };
+  }
+
   function append(role, text, options = {}) {
     removeEmptyState();
     const sourceType = options.sourceType || 'local';
@@ -237,7 +277,7 @@
     input.value = '';
     setLoading(true);
     let assistantView = null;
-    let accumulated = '';
+    let renderer = null;
     try {
       const res = await fetch('/chatbot/message/stream', {
         method: 'POST',
@@ -247,6 +287,8 @@
       if (!res.ok || !res.body) throw new Error('Streaming request failed');
 
       assistantView = append('assistant', '', { sourceType: 'rag' });
+      assistantView.bubble.classList.add('is-streaming');
+      renderer = createStreamingRenderer(assistantView.bubble);
       typing.classList.add('hidden');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -257,9 +299,7 @@
         if (!line.trim()) return;
         const event = JSON.parse(line);
         if (event.type === 'chunk') {
-          accumulated += event.text || '';
-          assistantView.bubble.innerHTML = renderMarkdown(accumulated);
-          scrollBottom();
+          renderer.enqueue(event.text || '');
         } else if (event.type === 'done') {
           doneEvent = event;
         } else if (event.type === 'error') {
@@ -277,6 +317,7 @@
       }
       if (buffer.trim()) handleLine(buffer);
       if (!doneEvent) throw new Error('Stream ended before completion');
+      await renderer.flush();
 
       userView.wrap.dataset.messageId = doneEvent.user_message_id;
       userView.deleteButton.dataset.messageId = doneEvent.user_message_id;
@@ -287,8 +328,10 @@
       setLoading(false);
     } catch {
       setLoading(false);
-      const errorText = accumulated
-        ? `${accumulated}\n\nThe response was interrupted. Please try again.`
+      const streamedText = renderer ? renderer.text() : '';
+      if (renderer) await renderer.flush();
+      const errorText = streamedText
+        ? `${streamedText}\n\nThe response was interrupted. Please try again.`
         : 'Connection error. Please check your network and try again.';
       if (assistantView) {
         assistantView.bubble.innerHTML = renderMarkdown(errorText);

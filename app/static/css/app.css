@@ -320,3 +320,17 @@
 .chat-source-button:hover { background: rgb(16 185 129 / 0.2); }
 .dark .chat-sources { color: rgb(203 213 225); border-color: rgb(71 85 105 / 0.65); }
 .dark .chat-source-button { color: #6ee7b7; }
+
+.chat-message-content.is-streaming::after {
+  content: '';
+  display: inline-block;
+  width: 0.45rem;
+  height: 1em;
+  margin-left: 0.2rem;
+  vertical-align: -0.12em;
+  border-radius: 0.1rem;
+  background: currentColor;
+  animation: chat-cursor-blink 0.8s steps(1) infinite;
+}
+
+@keyframes chat-cursor-blink { 50% { opacity: 0; } }
