@@ -1,5 +1,4 @@
 import re
-import time
 
 from app.services.knowledge_service import (
     UNRELATED_MESSAGE,
@@ -122,7 +121,6 @@ def _text_chunks(text, words_per_chunk=7):
     words = re.findall(r"\S+\s*", text or "")
     for start in range(0, len(words), words_per_chunk):
         yield "".join(words[start:start + words_per_chunk])
-        time.sleep(0.03)
 
 
 def generate_hybrid_reply_stream(user_message, conversation=None, user_context=None):

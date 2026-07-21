@@ -163,6 +163,9 @@
     const waiters = [];
     let renderedText = '';
     let running = false;
+    let inputComplete = false;
+    const startBufferSize = 60;
+    const minimumBufferSize = 12;
 
     function resolveWaiters() {
       if (running || queue.length) return;
@@ -171,14 +174,20 @@
 
     async function pump() {
       if (running) return;
+      if (!inputComplete && queue.length < startBufferSize) return;
       running = true;
       while (queue.length) {
+        if (!inputComplete && queue.length <= minimumBufferSize) break;
         renderedText += queue.shift();
         bubble.innerHTML = renderMarkdown(renderedText);
         scrollBottom();
-        await new Promise((resolve) => setTimeout(resolve, 22));
+        await new Promise((resolve) => setTimeout(resolve, 30));
       }
       running = false;
+      if (inputComplete && queue.length) {
+        pump();
+        return;
+      }
       resolveWaiters();
     }
 
@@ -191,7 +200,9 @@
       text() {
         return renderedText + queue.join('');
       },
-      flush() {
+      complete() {
+        inputComplete = true;
+        pump();
         if (!running && !queue.length) return Promise.resolve();
         return new Promise((resolve) => waiters.push(resolve));
       },
@@ -317,7 +328,7 @@
       }
       if (buffer.trim()) handleLine(buffer);
       if (!doneEvent) throw new Error('Stream ended before completion');
-      await renderer.flush();
+      await renderer.complete();
 
       userView.wrap.dataset.messageId = doneEvent.user_message_id;
       userView.deleteButton.dataset.messageId = doneEvent.user_message_id;
@@ -329,7 +340,7 @@
     } catch {
       setLoading(false);
       const streamedText = renderer ? renderer.text() : '';
-      if (renderer) await renderer.flush();
+      if (renderer) await renderer.complete();
       const errorText = streamedText
         ? `${streamedText}\n\nThe response was interrupted. Please try again.`
         : 'Connection error. Please check your network and try again.';
