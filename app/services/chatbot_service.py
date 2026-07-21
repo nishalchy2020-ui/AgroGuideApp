@@ -103,15 +103,12 @@ def _local_evidence(local):
 
 def _response_sources(evidence):
     sources = []
-    seen = set()
-    for item in evidence[:8]:
+    for index, item in enumerate(evidence[:8], start=1):
+        if not (item.get("snippet") or item.get("answer")):
+            continue
         name = item.get("title") or item.get("source") or "Source"
         url = item.get("url")
-        key = (name, url)
-        if key in seen:
-            continue
-        seen.add(key)
-        sources.append({"name": name, "url": url})
+        sources.append({"index": index, "name": name, "url": url})
     return sources
 
 

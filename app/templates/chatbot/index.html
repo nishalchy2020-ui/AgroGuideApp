@@ -25,8 +25,8 @@
       <div class="max-w-[85%]">
         <div class="flex items-center gap-2 mb-1 {% if msg.role == 'user' %}justify-end{% endif %}">
           {% if msg.role != 'user' %}
-          <span class="source-badge text-[11px] px-2 py-0.5 rounded-full border {% if msg.source_type == 'internet' %}border-sky-400/50 text-sky-700 dark:text-sky-300{% elif msg.source_type == 'fallback' %}border-amber-400/50 text-amber-700 dark:text-amber-300{% else %}border-emerald-400/50 text-emerald-700 dark:text-emerald-300{% endif %}">
-            {% if msg.source_type == 'internet' %}Internet Result{% elif msg.source_type == 'fallback' %}Fallback{% else %}Local Knowledge{% endif %}
+          <span class="source-badge text-[11px] px-2 py-0.5 rounded-full border {% if msg.source_type == 'rag' %}border-violet-400/50 text-violet-700 dark:text-violet-300{% elif msg.source_type == 'internet' %}border-sky-400/50 text-sky-700 dark:text-sky-300{% elif msg.source_type == 'fallback' %}border-amber-400/50 text-amber-700 dark:text-amber-300{% else %}border-emerald-400/50 text-emerald-700 dark:text-emerald-300{% endif %}">
+            {% if msg.source_type == 'rag' %}RAG Answer{% elif msg.source_type == 'internet' %}Internet Result{% elif msg.source_type == 'fallback' %}Fallback{% else %}Local Knowledge{% endif %}
           </span>
           {% endif %}
           <button type="button" class="delete-message opacity-70 hover:opacity-100 text-slate-400 hover:text-red-500" data-message-id="{{ msg.id }}" title="Delete message">
@@ -36,6 +36,19 @@
         <div class="chat-message-content whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed {% if msg.role == 'user' %}bg-agro-600 text-white{% else %}glass-card{% endif %}"{% if msg.role != 'user' %} data-markdown="true"{% endif %}>
           {{ msg.display_message }}
         </div>
+        {% if msg.role != 'user' and msg.display_sources %}
+        <div class="chat-sources">
+          <p class="chat-sources-title">Sources</p>
+          <ol>
+            {% for source in msg.display_sources %}
+            <li>
+              <span class="chat-source-marker">[{{ source.get('index', loop.index) }}]</span>
+              {% if source.get('url') %}<a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.name }}</a>{% else %}{{ source.name }}{% endif %}
+            </li>
+            {% endfor %}
+          </ol>
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endfor %}
@@ -53,5 +66,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/chatbot.js', v='4') }}"></script>
+<script src="{{ url_for('static', filename='js/chatbot.js', v='5') }}"></script>
 {% endblock %}

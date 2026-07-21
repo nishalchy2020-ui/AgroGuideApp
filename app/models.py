@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 from flask_login import UserMixin
@@ -101,11 +102,37 @@ class ChatbotMessage(db.Model):
     message = db.Column(db.Text, nullable=True)
     content = db.Column(db.Text, nullable=False)
     source_type = db.Column(db.String(32), nullable=False, default="local")
+    sources = db.Column(db.Text, nullable=False, default="[]")
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
 
     @property
     def display_message(self):
         return self.message or self.content
+
+    @property
+    def display_sources(self):
+        try:
+            value = json.loads(self.sources or "[]")
+        except (TypeError, ValueError):
+            return []
+        if not isinstance(value, list):
+            return []
+
+        sources = []
+        for position, source in enumerate(value, start=1):
+            if not isinstance(source, dict) or not source.get("name"):
+                continue
+            url = source.get("url") or None
+            if url and not str(url).lower().startswith(("http://", "https://")):
+                url = None
+            sources.append(
+                {
+                    "index": source.get("index") or position,
+                    "name": str(source["name"]),
+                    "url": url,
+                }
+            )
+        return sources
 
     def set_message(self, value):
         self.message = value
@@ -153,7 +180,7 @@ class ActivityHistory(db.Model):
 
 
 def ensure_chatbot_message_schema():
-    """Add chatbot history columns for existing SQLite databases."""
+    """Add chatbot history columns for existing databases."""
     inspector = inspect(db.engine)
     if "chatbot_messages" not in inspector.get_table_names():
         return
@@ -169,6 +196,13 @@ def ensure_chatbot_message_schema():
             text(
                 "ALTER TABLE chatbot_messages "
                 "ADD COLUMN source_type VARCHAR(32) NOT NULL DEFAULT 'local'"
+            )
+        )
+    if "sources" not in columns:
+        db.session.execute(
+            text(
+                "ALTER TABLE chatbot_messages "
+                "ADD COLUMN sources TEXT NOT NULL DEFAULT '[]'"
             )
         )
     db.session.commit()

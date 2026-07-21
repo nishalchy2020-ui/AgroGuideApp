@@ -290,3 +290,20 @@
 .chat-message-content[data-markdown="true"] h5 { font-weight: 700; margin-bottom: 0.35rem; }
 .chat-message-content[data-markdown="true"] a { color: #059669; text-decoration: underline; }
 .chat-message-content[data-markdown="true"] code { padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: rgb(148 163 184 / 0.18); }
+
+.chat-sources {
+  margin-top: 0.6rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgb(148 163 184 / 0.28);
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+}
+
+.chat-sources-title { font-weight: 700; color: inherit; }
+.chat-sources ol { margin-top: 0.3rem; }
+.chat-sources li { display: flex; gap: 0.4rem; align-items: baseline; }
+.chat-sources li + li { margin-top: 0.2rem; }
+.chat-source-marker { flex: none; font-weight: 700; }
+.chat-sources a { color: #059669; text-decoration: underline; overflow-wrap: anywhere; }
+.dark .chat-sources { color: rgb(203 213 225); border-color: rgb(71 85 105 / 0.65); }

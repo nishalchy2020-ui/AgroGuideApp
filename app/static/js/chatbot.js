@@ -107,6 +107,44 @@
     });
   }
 
+  function appendSources(column, sources) {
+    const usableSources = Array.isArray(sources)
+      ? sources.filter((source) => source && source.name)
+      : [];
+    if (!usableSources.length) return;
+
+    const section = document.createElement('div');
+    section.className = 'chat-sources';
+
+    const heading = document.createElement('p');
+    heading.className = 'chat-sources-title';
+    heading.textContent = 'Sources';
+    section.appendChild(heading);
+
+    const list = document.createElement('ol');
+    usableSources.forEach((source, position) => {
+      const item = document.createElement('li');
+      const marker = document.createElement('span');
+      marker.className = 'chat-source-marker';
+      marker.textContent = `[${source.index || position + 1}]`;
+      item.appendChild(marker);
+
+      if (source.url && /^https?:\/\//i.test(source.url)) {
+        const link = document.createElement('a');
+        link.href = source.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = source.name;
+        item.appendChild(link);
+      } else {
+        item.appendChild(document.createTextNode(source.name));
+      }
+      list.appendChild(item);
+    });
+    section.appendChild(list);
+    column.appendChild(section);
+  }
+
   function append(role, text, options = {}) {
     removeEmptyState();
     const sourceType = options.sourceType || 'local';
@@ -152,6 +190,7 @@
 
     column.appendChild(meta);
     column.appendChild(bubble);
+    if (role !== 'user') appendSources(column, options.sources);
     wrap.appendChild(column);
     messages.insertBefore(wrap, typing);
     scrollBottom();
@@ -199,6 +238,7 @@
       append('assistant', data.reply || data.error || 'No response', {
         id: data.assistant_message_id,
         sourceType: data.source_type,
+        sources: data.sources,
         isError: !!data.error,
       });
     } catch {

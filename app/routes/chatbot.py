@@ -1,3 +1,4 @@
+import json
 import logging
 
 from flask import Blueprint, current_app, jsonify, render_template, request
@@ -71,6 +72,7 @@ def message():
         content=reply,
         message=reply,
         source_type=source_type,
+        sources=json.dumps(result.get("sources", [])),
     )
     db.session.add(user_msg)
     db.session.add(assistant_msg)

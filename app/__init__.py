@@ -53,8 +53,9 @@ def create_app(config_class=None):
     _register_error_handlers(app)
 
     with app.app_context():
-        from app.models import ensure_user_security_schema
+        from app.models import ensure_chatbot_message_schema, ensure_user_security_schema
 
+        ensure_chatbot_message_schema()
         ensure_user_security_schema()
 
     if app.config.get("AUTO_INIT_DB"):
