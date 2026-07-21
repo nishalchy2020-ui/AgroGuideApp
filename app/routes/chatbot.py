@@ -109,7 +109,7 @@ def message():
 @chatbot_bp.route("/message/stream", methods=["POST"])
 @login_required
 def stream_message():
-    """Stream NDJSON chunks while generating and persist the final conversation."""
+    """Stream Server-Sent Events while generating and persist the final conversation."""
     data = request.get_json(silent=True) or {}
     text = (data.get("message") or request.form.get("message", "")).strip()
     if not text:
@@ -127,12 +127,14 @@ def stream_message():
     user_context = chatbot_user_context(user_id)
 
     def encode_event(event):
-        return json.dumps(event, ensure_ascii=False) + "\n"
+        return "data: " + json.dumps(event, ensure_ascii=False) + "\n\n"
 
     @stream_with_context
     def generate_events():
         result = None
         try:
+            # Flush response headers before retrieval/model work begins.
+            yield encode_event({"type": "ready"})
             for event in generate_hybrid_reply_stream(
                 text,
                 conversation=conversation,
@@ -199,10 +201,11 @@ def stream_message():
 
     return Response(
         generate_events(),
-        mimetype="application/x-ndjson",
+        mimetype="text/event-stream",
         headers={
             "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no",
+            "Content-Encoding": "identity",
         },
     )
 

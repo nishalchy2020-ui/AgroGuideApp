@@ -11,6 +11,17 @@ from app.services.search_service import SearchUnavailable, search_all_sources
 
 LOCAL_CONFIDENCE_THRESHOLD = 0.66
 
+_CITATION_ARTIFACT = re.compile(
+    r"\s*\[(?:\s*\d+(?:\s*,\s*\d+)*\s*(?:,\s*supplemental search context\s*)?"
+    r"|\s*supplemental search context\s*)\]",
+    re.IGNORECASE,
+)
+
+
+def strip_citation_artifacts(text):
+    """Remove model-generated citation markers; source links are rendered separately."""
+    return _CITATION_ARTIFACT.sub("", text or "")
+
 
 def generate_hybrid_reply(user_message, conversation=None, user_context=None):
     """
@@ -45,7 +56,7 @@ def generate_hybrid_reply(user_message, conversation=None, user_context=None):
     )
     if gemini_reply and not _is_gemini_scope_refusal(gemini_reply):
         return {
-            "reply": _append_context_note(gemini_reply, context_note),
+            "reply": strip_citation_artifacts(_append_context_note(gemini_reply, context_note)),
             "source_type": "rag",
             "sources": _response_sources(evidence),
             "error": False,
@@ -112,8 +123,7 @@ def _response_sources(evidence):
         ):
             continue
         name = item.get("title") or item.get("source") or "Source"
-        index = len(sources) + 1
-        sources.append({"index": index, "name": name, "url": url})
+        sources.append({"name": name, "url": url})
     return sources
 
 
@@ -164,14 +174,14 @@ def generate_hybrid_reply_stream(user_message, conversation=None, user_context=N
     except GeminiStreamError as exc:
         gemini_error = str(exc)
 
-    gemini_reply = "".join(reply_parts).strip()
+    gemini_reply = strip_citation_artifacts("".join(reply_parts)).strip()
     if gemini_reply:
         context_suffix = _append_context_note("", context_note)
         if context_suffix:
             reply_parts.append(context_suffix)
             yield {"type": "chunk", "text": context_suffix}
         result = {
-            "reply": "".join(reply_parts).strip(),
+            "reply": strip_citation_artifacts("".join(reply_parts)).strip(),
             "source_type": "rag",
             "sources": _response_sources(evidence),
             "error": False,

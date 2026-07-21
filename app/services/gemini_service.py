@@ -157,7 +157,6 @@ def _build_rag_prompt(user_message: str, evidence=None, conversation=None, user_
     local_lines = []
     supplemental_lines = []
     external_lines = []
-    external_index = 0
     for item in (evidence or [])[:8]:
         title = item.get("title") or item.get("name") or "Retrieved source"
         source = item.get("source") or item.get("provider") or "retrieved"
@@ -170,10 +169,7 @@ def _build_rag_prompt(user_message: str, evidence=None, conversation=None, user_
         if source == "local":
             local_lines.append(f"{title}\n{snippet}")
         elif url.startswith(("http://", "https://")):
-            external_index += 1
-            external_lines.append(
-                f"[{external_index}] {title} ({source}) {url}\n{snippet}"
-            )
+            external_lines.append(f"{title} ({source}) {url}\n{snippet}")
         else:
             supplemental_lines.append(f"{title} ({source})\n{snippet}")
 
@@ -188,8 +184,10 @@ def _build_rag_prompt(user_message: str, evidence=None, conversation=None, user_
         "Answer as AgroGuide AI using the retrieved evidence and recent chat context. "
         "Stay strictly on agriculture/farming. If sources conflict, prefer local AgroGuide "
         "knowledge and university/extension/government sources. Give practical steps. "
-        "When using an external source, cite it with its matching [1], [2], etc. number. "
-        "Never create a citation number for local knowledge or supplemental search context. "
+        "Do not put citations, reference numbers, source labels, source names, or URLs in "
+        "the answer text. In particular, never output bracketed markers such as [1], "
+        "[1, 2], or [Supplemental search context]. The interface displays external sources "
+        "separately below the answer. "
         "Do not mention irrelevant user history. If evidence is weak, say what information "
         "is missing and provide safe general farming guidance."
     )

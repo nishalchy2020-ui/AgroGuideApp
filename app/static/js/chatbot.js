@@ -109,7 +109,7 @@
       } catch {
         sources = [];
       }
-      bubble.innerHTML = renderMarkdown(bubble.textContent.trim());
+      bubble.innerHTML = renderMarkdown(stripCitationArtifacts(bubble.textContent.trim()));
       appendSources(bubble, sources);
     });
   }
@@ -132,14 +132,14 @@
 
     const buttons = document.createElement('div');
     buttons.className = 'chat-source-buttons';
-    usableSources.forEach((source, position) => {
+    usableSources.forEach((source) => {
       const link = document.createElement('a');
       link.className = 'chat-source-button';
       link.href = source.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      link.textContent = source.index || position + 1;
-      link.setAttribute('aria-label', `Open source ${source.index || position + 1}: ${source.name}`);
+      link.textContent = source.name;
+      link.setAttribute('aria-label', `Open source: ${source.name}`);
       link.title = source.name;
       buttons.appendChild(link);
     });
@@ -179,7 +179,7 @@
       while (queue.length) {
         if (!inputComplete && queue.length <= minimumBufferSize) break;
         renderedText += queue.shift();
-        bubble.innerHTML = renderMarkdown(renderedText);
+        bubble.innerHTML = renderMarkdown(stripCitationArtifacts(renderedText));
         scrollBottom();
         await new Promise((resolve) => setTimeout(resolve, 30));
       }
@@ -207,6 +207,12 @@
         return new Promise((resolve) => waiters.push(resolve));
       },
     };
+  }
+
+  function stripCitationArtifacts(text) {
+    return (text || '')
+      .replace(/\s*\[(?:\s*\d+(?:\s*,\s*\d+)*\s*(?:,\s*supplemental search context\s*)?|\s*supplemental search context\s*)\]/gi, '')
+      .replace(/\s*\[(?:\s*[\d,]+\s*|\s*(?:supplemental search context)?\s*)$/i, '');
   }
 
   function append(role, text, options = {}) {
@@ -250,7 +256,7 @@
       bubble.textContent = text;
     } else {
       bubble.dataset.markdown = 'true';
-      bubble.innerHTML = renderMarkdown(text);
+      bubble.innerHTML = renderMarkdown(stripCitationArtifacts(text));
     }
 
     column.appendChild(meta);
@@ -306,9 +312,14 @@
       let buffer = '';
       let doneEvent = null;
 
-      function handleLine(line) {
-        if (!line.trim()) return;
-        const event = JSON.parse(line);
+      function handleEvent(block) {
+        const data = block
+          .split(/\r?\n/)
+          .filter((line) => line.startsWith('data:'))
+          .map((line) => line.slice(5).trimStart())
+          .join('\n');
+        if (!data) return;
+        const event = JSON.parse(data);
         if (event.type === 'chunk') {
           renderer.enqueue(event.text || '');
         } else if (event.type === 'done') {
@@ -321,14 +332,15 @@
       while (true) {
         const { value, done } = await reader.read();
         buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        lines.forEach(handleLine);
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop() || '';
+        events.forEach(handleEvent);
         if (done) break;
       }
-      if (buffer.trim()) handleLine(buffer);
+      if (buffer.trim()) handleEvent(buffer);
       if (!doneEvent) throw new Error('Stream ended before completion');
       await renderer.complete();
+      assistantView.bubble.classList.remove('is-streaming');
 
       userView.wrap.dataset.messageId = doneEvent.user_message_id;
       userView.deleteButton.dataset.messageId = doneEvent.user_message_id;
@@ -345,7 +357,8 @@
         ? `${streamedText}\n\nThe response was interrupted. Please try again.`
         : 'Connection error. Please check your network and try again.';
       if (assistantView) {
-        assistantView.bubble.innerHTML = renderMarkdown(errorText);
+        assistantView.bubble.classList.remove('is-streaming');
+        assistantView.bubble.innerHTML = renderMarkdown(stripCitationArtifacts(errorText));
         updateAssistantMeta(assistantView, 'fallback', true);
       } else {
         append('assistant', errorText, { sourceType: 'fallback', isError: true });
