@@ -133,12 +133,14 @@
     const buttons = document.createElement('div');
     buttons.className = 'chat-source-buttons';
     usableSources.forEach((source) => {
+      const words = source.name.trim().split(/\s+/);
+      const shortName = words.length > 3 ? `${words.slice(0, 3).join(' ')}…` : source.name;
       const link = document.createElement('a');
       link.className = 'chat-source-button';
       link.href = source.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      link.textContent = source.name;
+      link.textContent = shortName;
       link.setAttribute('aria-label', `Open source: ${source.name}`);
       link.title = source.name;
       buttons.appendChild(link);

@@ -293,7 +293,7 @@
 
 .chat-sources {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.55rem;
   margin-top: 0.75rem;
   padding-top: 0.65rem;
@@ -302,13 +302,13 @@
   color: rgb(100 116 139);
 }
 
-.chat-sources-title { flex: none; font-weight: 700; color: inherit; }
-.chat-source-buttons { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chat-sources-title { flex: none; margin-top: 0.3rem; font-weight: 700; color: inherit; }
+.chat-source-buttons { display: flex; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; gap: 0.35rem; }
 .chat-source-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  max-width: 16rem;
+  max-width: 13rem;
   min-height: 1.65rem;
   padding: 0.25rem 0.65rem;
   border: 1px solid rgb(16 185 129 / 0.45);
