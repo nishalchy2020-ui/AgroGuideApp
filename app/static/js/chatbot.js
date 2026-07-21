@@ -103,13 +103,22 @@
 
   function formatSavedMessages() {
     messages.querySelectorAll('[data-markdown="true"]').forEach((bubble) => {
+      let sources = [];
+      try {
+        sources = JSON.parse(bubble.dataset.sources || '[]');
+      } catch {
+        sources = [];
+      }
       bubble.innerHTML = renderMarkdown(bubble.textContent.trim());
+      appendSources(bubble, sources);
     });
   }
 
-  function appendSources(column, sources) {
+  function appendSources(bubble, sources) {
     const usableSources = Array.isArray(sources)
-      ? sources.filter((source) => source && source.name)
+      ? sources.filter(
+          (source) => source && source.name && /^https?:\/\//i.test(source.url || '')
+        )
       : [];
     if (!usableSources.length) return;
 
@@ -121,28 +130,32 @@
     heading.textContent = 'Sources';
     section.appendChild(heading);
 
-    const list = document.createElement('ol');
+    const buttons = document.createElement('div');
+    buttons.className = 'chat-source-buttons';
     usableSources.forEach((source, position) => {
-      const item = document.createElement('li');
-      const marker = document.createElement('span');
-      marker.className = 'chat-source-marker';
-      marker.textContent = `[${source.index || position + 1}]`;
-      item.appendChild(marker);
-
-      if (source.url && /^https?:\/\//i.test(source.url)) {
-        const link = document.createElement('a');
-        link.href = source.url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = source.name;
-        item.appendChild(link);
-      } else {
-        item.appendChild(document.createTextNode(source.name));
-      }
-      list.appendChild(item);
+      const link = document.createElement('a');
+      link.className = 'chat-source-button';
+      link.href = source.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = source.index || position + 1;
+      link.setAttribute('aria-label', `Open source ${source.index || position + 1}: ${source.name}`);
+      link.title = source.name;
+      buttons.appendChild(link);
     });
-    section.appendChild(list);
-    column.appendChild(section);
+    section.appendChild(buttons);
+    bubble.appendChild(section);
+  }
+
+  function updateAssistantMeta(view, sourceType, isError) {
+    view.badge.className =
+      'source-badge text-[11px] px-2 py-0.5 rounded-full border ' + badgeClass(sourceType);
+    view.badge.textContent = badgeLabel(sourceType);
+    if (isError) {
+      view.bubble.className =
+        'chat-message-content whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed ' +
+        'glass-card border border-amber-500/40 text-amber-800 dark:text-amber-200';
+    }
   }
 
   function append(role, text, options = {}) {
@@ -158,8 +171,9 @@
     const meta = document.createElement('div');
     meta.className = 'flex items-center gap-2 mb-1 ' + (role === 'user' ? 'justify-end' : '');
 
+    let badge = null;
     if (role !== 'user') {
-      const badge = document.createElement('span');
+      badge = document.createElement('span');
       badge.className = 'source-badge text-[11px] px-2 py-0.5 rounded-full border ' + badgeClass(sourceType);
       badge.textContent = badgeLabel(sourceType);
       meta.appendChild(badge);
@@ -190,12 +204,13 @@
 
     column.appendChild(meta);
     column.appendChild(bubble);
-    if (role !== 'user') appendSources(column, options.sources);
+    if (role !== 'user') appendSources(bubble, options.sources);
     wrap.appendChild(column);
     messages.insertBefore(wrap, typing);
     scrollBottom();
     if (clearBtn) clearBtn.disabled = false;
     if (window.lucide) lucide.createIcons();
+    return { wrap, column, bubble, badge, deleteButton: del };
   }
 
   function setLoading(on) {
@@ -218,36 +233,69 @@
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
-    append('user', text);
+    const userView = append('user', text);
     input.value = '';
     setLoading(true);
+    let assistantView = null;
+    let accumulated = '';
     try {
-      const res = await fetch('/chatbot/message', {
+      const res = await fetch('/chatbot/message/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
         body: JSON.stringify({ message: text }),
       });
-      const data = await res.json();
-      setLoading(false);
-      const lastUser = messages.querySelector('.chat-row:not([data-message-id])');
-      if (lastUser && data.user_message_id) {
-        lastUser.dataset.messageId = data.user_message_id;
-        const del = lastUser.querySelector('.delete-message');
-        if (del) del.dataset.messageId = data.user_message_id;
+      if (!res.ok || !res.body) throw new Error('Streaming request failed');
+
+      assistantView = append('assistant', '', { sourceType: 'rag' });
+      typing.classList.add('hidden');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let doneEvent = null;
+
+      function handleLine(line) {
+        if (!line.trim()) return;
+        const event = JSON.parse(line);
+        if (event.type === 'chunk') {
+          accumulated += event.text || '';
+          assistantView.bubble.innerHTML = renderMarkdown(accumulated);
+          scrollBottom();
+        } else if (event.type === 'done') {
+          doneEvent = event;
+        } else if (event.type === 'error') {
+          throw new Error(event.message || 'Streaming failed');
+        }
       }
-      append('assistant', data.reply || data.error || 'No response', {
-        id: data.assistant_message_id,
-        sourceType: data.source_type,
-        sources: data.sources,
-        isError: !!data.error,
-      });
+
+      while (true) {
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        lines.forEach(handleLine);
+        if (done) break;
+      }
+      if (buffer.trim()) handleLine(buffer);
+      if (!doneEvent) throw new Error('Stream ended before completion');
+
+      userView.wrap.dataset.messageId = doneEvent.user_message_id;
+      userView.deleteButton.dataset.messageId = doneEvent.user_message_id;
+      assistantView.wrap.dataset.messageId = doneEvent.assistant_message_id;
+      assistantView.deleteButton.dataset.messageId = doneEvent.assistant_message_id;
+      updateAssistantMeta(assistantView, doneEvent.source_type, doneEvent.error);
+      appendSources(assistantView.bubble, doneEvent.sources);
+      setLoading(false);
     } catch {
       setLoading(false);
-      append(
-        'assistant',
-        'Connection error. Please check your network and try again.',
-        { sourceType: 'fallback', isError: true }
-      );
+      const errorText = accumulated
+        ? `${accumulated}\n\nThe response was interrupted. Please try again.`
+        : 'Connection error. Please check your network and try again.';
+      if (assistantView) {
+        assistantView.bubble.innerHTML = renderMarkdown(errorText);
+        updateAssistantMeta(assistantView, 'fallback', true);
+      } else {
+        append('assistant', errorText, { sourceType: 'fallback', isError: true });
+      }
     }
   });
 

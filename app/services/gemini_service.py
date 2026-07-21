@@ -154,23 +154,42 @@ def _build_rag_prompt(user_message: str, evidence=None, conversation=None, user_
     if recent:
         sections.append("Recent chat:\n" + "\n".join(recent))
 
-    evidence_lines = []
-    for idx, item in enumerate((evidence or [])[:8], start=1):
-        title = item.get("title") or item.get("name") or f"Source {idx}"
+    local_lines = []
+    supplemental_lines = []
+    external_lines = []
+    external_index = 0
+    for item in (evidence or [])[:8]:
+        title = item.get("title") or item.get("name") or "Retrieved source"
         source = item.get("source") or item.get("provider") or "retrieved"
         url = item.get("url") or ""
         snippet = " ".join(str(item.get("snippet") or item.get("answer") or "").split())
         if len(snippet) > 700:
             snippet = snippet[:700].rsplit(" ", 1)[0] + "."
-        if snippet:
-            evidence_lines.append(f"[{idx}] {title} ({source}) {url}\n{snippet}")
-    if evidence_lines:
-        sections.append("Retrieved evidence:\n" + "\n\n".join(evidence_lines))
+        if not snippet:
+            continue
+        if source == "local":
+            local_lines.append(f"{title}\n{snippet}")
+        elif url.startswith(("http://", "https://")):
+            external_index += 1
+            external_lines.append(
+                f"[{external_index}] {title} ({source}) {url}\n{snippet}"
+            )
+        else:
+            supplemental_lines.append(f"{title} ({source})\n{snippet}")
+
+    if local_lines:
+        sections.append("Local AgroGuide knowledge (do not cite with a number):\n" + "\n\n".join(local_lines))
+    if supplemental_lines:
+        sections.append("Supplemental search context (do not cite with a number):\n" + "\n\n".join(supplemental_lines))
+    if external_lines:
+        sections.append("External sources:\n" + "\n\n".join(external_lines))
 
     instructions = (
         "Answer as AgroGuide AI using the retrieved evidence and recent chat context. "
         "Stay strictly on agriculture/farming. If sources conflict, prefer local AgroGuide "
         "knowledge and university/extension/government sources. Give practical steps. "
+        "When using an external source, cite it with its matching [1], [2], etc. number. "
+        "Never create a citation number for local knowledge or supplemental search context. "
         "Do not mention irrelevant user history. If evidence is weak, say what information "
         "is missing and provide safe general farming guidance."
     )
@@ -334,3 +353,73 @@ def generate_rag_reply(user_message: str, evidence=None, conversation=None, user
         user_context=user_context,
     )
     return generate_reply(prompt, conversation=[])
+
+
+class GeminiStreamError(RuntimeError):
+    """Raised when Gemini cannot start or complete a streamed response."""
+
+
+def generate_rag_reply_stream(user_message: str, evidence=None, conversation=None, user_context=None):
+    """Yield Gemini response text as the SDK produces it."""
+    global _quota_block_until
+
+    prompt = _build_rag_prompt(
+        user_message,
+        evidence=evidence,
+        conversation=conversation,
+        user_context=user_context,
+    )
+
+    try:
+        api_key, model_name = _gemini_settings()
+    except RuntimeError:
+        from config import getenv
+
+        api_key = (getenv("GEMINI_API_KEY") or "").strip()
+        model_name = _normalize_model_name(getenv("GEMINI_MODEL"))
+
+    if not api_key:
+        raise GeminiStreamError(GEMINI_MISSING_MESSAGE)
+    if time.time() < _quota_block_until:
+        raise GeminiStreamError("AgroGuide AI is temporarily rate-limited.")
+
+    try:
+        from google import genai
+        from google.genai import types
+    except (ImportError, ModuleNotFoundError) as exc:
+        raise GeminiStreamError("The Google Gemini client library is not installed.") from exc
+
+    try:
+        client = genai.Client(api_key=api_key)
+    except Exception as exc:
+        raise GeminiStreamError("Gemini could not be initialized.") from exc
+
+    last_exc = None
+    for candidate_model in _candidate_model_names(model_name):
+        emitted = False
+        try:
+            response_stream = client.models.generate_content_stream(
+                model=candidate_model,
+                contents=prompt,
+                config=types.GenerateContentConfig(system_instruction=SYSTEM_INSTRUCTION),
+            )
+            for response_chunk in response_stream:
+                text = response_chunk.text or ""
+                if text:
+                    emitted = True
+                    yield text
+            if emitted:
+                return
+        except Exception as exc:
+            last_exc = exc
+            if _is_quota_error(exc):
+                _quota_block_until = time.time() + 60
+            if emitted or candidate_model == FALLBACK_GEMINI_MODEL:
+                break
+            _logger.warning(
+                "Gemini streaming failed for %s; trying %s.",
+                candidate_model,
+                FALLBACK_GEMINI_MODEL,
+            )
+
+    raise GeminiStreamError(str(last_exc or "Gemini returned no streamed text."))

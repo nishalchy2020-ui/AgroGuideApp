@@ -33,22 +33,9 @@
             {{ icon('trash-2', 'w-3.5 h-3.5') }}
           </button>
         </div>
-        <div class="chat-message-content whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed {% if msg.role == 'user' %}bg-agro-600 text-white{% else %}glass-card{% endif %}"{% if msg.role != 'user' %} data-markdown="true"{% endif %}>
+        <div class="chat-message-content whitespace-pre-wrap px-4 py-3 rounded-2xl text-sm leading-relaxed {% if msg.role == 'user' %}bg-agro-600 text-white{% else %}glass-card{% endif %}"{% if msg.role != 'user' %} data-markdown="true" data-sources="{{ msg.display_sources|tojson|forceescape }}"{% endif %}>
           {{ msg.display_message }}
         </div>
-        {% if msg.role != 'user' and msg.display_sources %}
-        <div class="chat-sources">
-          <p class="chat-sources-title">Sources</p>
-          <ol>
-            {% for source in msg.display_sources %}
-            <li>
-              <span class="chat-source-marker">[{{ source.get('index', loop.index) }}]</span>
-              {% if source.get('url') %}<a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.name }}</a>{% else %}{{ source.name }}{% endif %}
-            </li>
-            {% endfor %}
-          </ol>
-        </div>
-        {% endif %}
       </div>
     </div>
     {% endfor %}
@@ -66,5 +53,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/chatbot.js', v='5') }}"></script>
+<script src="{{ url_for('static', filename='js/chatbot.js', v='6') }}"></script>
 {% endblock %}

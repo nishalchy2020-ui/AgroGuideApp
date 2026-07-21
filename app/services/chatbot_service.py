@@ -1,4 +1,5 @@
 import re
+import time
 
 from app.services.knowledge_service import (
     UNRELATED_MESSAGE,
@@ -6,7 +7,7 @@ from app.services.knowledge_service import (
     mentioned_common_crop,
     search_local_knowledge,
 )
-from app.services.gemini_service import generate_rag_reply
+from app.services.gemini_service import GeminiStreamError, generate_rag_reply, generate_rag_reply_stream
 from app.services.search_service import SearchUnavailable, search_all_sources
 
 LOCAL_CONFIDENCE_THRESHOLD = 0.66
@@ -103,13 +104,120 @@ def _local_evidence(local):
 
 def _response_sources(evidence):
     sources = []
-    for index, item in enumerate(evidence[:8], start=1):
-        if not (item.get("snippet") or item.get("answer")):
+    for item in evidence[:8]:
+        url = item.get("url") or ""
+        if (
+            item.get("source") == "local"
+            or not url.startswith(("http://", "https://"))
+            or not (item.get("snippet") or item.get("answer"))
+        ):
             continue
         name = item.get("title") or item.get("source") or "Source"
-        url = item.get("url")
+        index = len(sources) + 1
         sources.append({"index": index, "name": name, "url": url})
     return sources
+
+
+def _text_chunks(text, words_per_chunk=7):
+    words = re.findall(r"\S+\s*", text or "")
+    for start in range(0, len(words), words_per_chunk):
+        yield "".join(words[start:start + words_per_chunk])
+        time.sleep(0.03)
+
+
+def generate_hybrid_reply_stream(user_message, conversation=None, user_context=None):
+    """Yield text chunks followed by one final result event."""
+    contextual_message = _contextualize_followup(user_message, conversation)
+
+    if not is_agriculture_or_app_query(contextual_message):
+        result = {
+            "reply": UNRELATED_MESSAGE,
+            "source_type": "fallback",
+            "sources": [],
+            "error": False,
+        }
+        for chunk in _text_chunks(result["reply"]):
+            yield {"type": "chunk", "text": chunk}
+        yield {"type": "result", "result": result}
+        return
+
+    context_note = _format_context_note(user_context, user_message)
+    local = search_local_knowledge(contextual_message)
+    local_evidence = _local_evidence(local)
+    evidence = list(local_evidence)
+    search_error = None
+    try:
+        evidence.extend(search_all_sources(f"{contextual_message} agriculture farming crop advice"))
+    except SearchUnavailable as exc:
+        search_error = str(exc)
+
+    contextual_conversation = _conversation_with_context(conversation, user_context)
+    reply_parts = []
+    gemini_error = None
+    try:
+        for chunk in generate_rag_reply_stream(
+            contextual_message,
+            evidence=evidence,
+            conversation=contextual_conversation,
+            user_context=user_context,
+        ):
+            reply_parts.append(chunk)
+            yield {"type": "chunk", "text": chunk}
+    except GeminiStreamError as exc:
+        gemini_error = str(exc)
+
+    gemini_reply = "".join(reply_parts).strip()
+    if gemini_reply:
+        context_suffix = _append_context_note("", context_note)
+        if context_suffix:
+            reply_parts.append(context_suffix)
+            yield {"type": "chunk", "text": context_suffix}
+        result = {
+            "reply": "".join(reply_parts).strip(),
+            "source_type": "rag",
+            "sources": _response_sources(evidence),
+            "error": False,
+        }
+        yield {"type": "result", "result": result}
+        return
+
+    if local["confidence"] >= LOCAL_CONFIDENCE_THRESHOLD:
+        result = {
+            "reply": _format_local_answer(local["answer"], context_note),
+            "source_type": "local",
+            "sources": [],
+            "error": False,
+        }
+    elif len(evidence) > len(local_evidence):
+        result = {
+            "reply": _append_context_note(
+                _fallback_from_evidence(contextual_message, evidence), context_note
+            ),
+            "source_type": "internet",
+            "sources": _response_sources(evidence),
+            "error": False,
+        }
+    else:
+        fallback_answer = (
+            local["answer"]
+            if local["confidence"] >= 0.5
+            else _practical_unknown_crop_answer(contextual_message)
+        )
+        result = {
+            "reply": (
+                "AI generation and web retrieval are unavailable right now, so here is "
+                "practical farming guidance.\n\n"
+                + _format_local_answer(fallback_answer, context_note)
+            ),
+            "source_type": "fallback",
+            "sources": [],
+            "error": True,
+            "debug_error": gemini_error or search_error,
+        }
+
+    for chunk in _text_chunks(result["reply"]):
+        yield {"type": "chunk", "text": chunk}
+    yield {"type": "result", "result": result}
 
 
 def _fallback_from_evidence(question, evidence):

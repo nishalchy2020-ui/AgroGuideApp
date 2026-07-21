@@ -1,12 +1,12 @@
 import json
 import logging
 
-from flask import Blueprint, current_app, jsonify, render_template, request
+from flask import Blueprint, Response, current_app, jsonify, render_template, request, stream_with_context
 from flask_login import current_user, login_required
 
 from app import db
 from app.models import ChatbotMessage
-from app.services.chatbot_service import generate_hybrid_reply
+from app.services.chatbot_service import generate_hybrid_reply, generate_hybrid_reply_stream
 from app.services.history_service import log_activity
 from app.services.user_context import chatbot_user_context
 
@@ -103,6 +103,107 @@ def message():
             "user_message_id": user_msg.id,
             "assistant_message_id": assistant_msg.id,
         }
+    )
+
+
+@chatbot_bp.route("/message/stream", methods=["POST"])
+@login_required
+def stream_message():
+    """Stream NDJSON chunks while generating and persist the final conversation."""
+    data = request.get_json(silent=True) or {}
+    text = (data.get("message") or request.form.get("message", "")).strip()
+    if not text:
+        return jsonify({"error": "Empty message"}), 400
+
+    user_id = current_user.id
+    prior = (
+        ChatbotMessage.query.filter_by(user_id=user_id)
+        .order_by(ChatbotMessage.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    prior.reverse()
+    conversation = [{"role": item.role, "content": item.display_message} for item in prior]
+    user_context = chatbot_user_context(user_id)
+
+    def encode_event(event):
+        return json.dumps(event, ensure_ascii=False) + "\n"
+
+    @stream_with_context
+    def generate_events():
+        result = None
+        try:
+            for event in generate_hybrid_reply_stream(
+                text,
+                conversation=conversation,
+                user_context=user_context,
+            ):
+                if event["type"] == "chunk":
+                    yield encode_event(event)
+                elif event["type"] == "result":
+                    result = event["result"]
+
+            if not result:
+                raise RuntimeError("The chatbot stream ended without a result.")
+
+            reply = result["reply"]
+            source_type = result.get("source_type", "fallback")
+            user_msg = ChatbotMessage(
+                user_id=user_id,
+                role="user",
+                content=text,
+                message=text,
+                source_type="local",
+            )
+            assistant_msg = ChatbotMessage(
+                user_id=user_id,
+                role="assistant",
+                content=reply,
+                message=reply,
+                source_type=source_type,
+                sources=json.dumps(result.get("sources", [])),
+            )
+            db.session.add(user_msg)
+            db.session.add(assistant_msg)
+            log_activity(
+                user_id,
+                "chatbot",
+                f"Chat: {text[:60]}{'...' if len(text) > 60 else ''}",
+                {
+                    "question": text,
+                    "answer_preview": reply[:200],
+                    "context_used": bool(user_context.get("summary")),
+                },
+            )
+            db.session.commit()
+
+            yield encode_event(
+                {
+                    "type": "done",
+                    "source_type": source_type,
+                    "sources": result.get("sources", []),
+                    "error": bool(result.get("error")),
+                    "user_message_id": user_msg.id,
+                    "assistant_message_id": assistant_msg.id,
+                }
+            )
+        except Exception:
+            db.session.rollback()
+            logger.exception("Failed to stream chatbot response for user_id=%s", user_id)
+            yield encode_event(
+                {
+                    "type": "error",
+                    "message": "The response could not be completed. Please try again.",
+                }
+            )
+
+    return Response(
+        generate_events(),
+        mimetype="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
