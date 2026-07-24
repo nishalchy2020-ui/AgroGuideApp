@@ -134,8 +134,10 @@ def _text_chunks(text, words_per_chunk=7):
 
 
 def generate_hybrid_reply_stream(user_message, conversation=None, user_context=None):
-    """Yield text chunks followed by one final result event."""
+    """Yield progress events while building one complete final result."""
+    yield {"type": "status", "message": "Reading your prompt"}
     contextual_message = _contextualize_followup(user_message, conversation)
+    yield {"type": "status", "message": "Thinking"}
 
     if not is_agriculture_or_app_query(contextual_message):
         result = {
@@ -144,16 +146,17 @@ def generate_hybrid_reply_stream(user_message, conversation=None, user_context=N
             "sources": [],
             "error": False,
         }
-        for chunk in _text_chunks(result["reply"]):
-            yield {"type": "chunk", "text": chunk}
+        yield {"type": "status", "message": "Just a sec"}
         yield {"type": "result", "result": result}
         return
 
     context_note = _format_context_note(user_context, user_message)
+    yield {"type": "status", "message": "Searching local knowledge"}
     local = search_local_knowledge(contextual_message)
     local_evidence = _local_evidence(local)
     evidence = list(local_evidence)
     search_error = None
+    yield {"type": "status", "message": "Using RAG"}
     try:
         evidence.extend(search_all_sources(f"{contextual_message} agriculture farming crop advice"))
     except SearchUnavailable as exc:
@@ -170,7 +173,6 @@ def generate_hybrid_reply_stream(user_message, conversation=None, user_context=N
             user_context=user_context,
         ):
             reply_parts.append(chunk)
-            yield {"type": "chunk", "text": chunk}
     except GeminiStreamError as exc:
         gemini_error = str(exc)
 
@@ -179,13 +181,13 @@ def generate_hybrid_reply_stream(user_message, conversation=None, user_context=N
         context_suffix = _append_context_note("", context_note)
         if context_suffix:
             reply_parts.append(context_suffix)
-            yield {"type": "chunk", "text": context_suffix}
         result = {
             "reply": strip_citation_artifacts("".join(reply_parts)).strip(),
             "source_type": "rag",
             "sources": _response_sources(evidence),
             "error": False,
         }
+        yield {"type": "status", "message": "Just a sec"}
         yield {"type": "result", "result": result}
         return
 
@@ -223,8 +225,7 @@ def generate_hybrid_reply_stream(user_message, conversation=None, user_context=N
             "debug_error": gemini_error or search_error,
         }
 
-    for chunk in _text_chunks(result["reply"]):
-        yield {"type": "chunk", "text": chunk}
+    yield {"type": "status", "message": "Just a sec"}
     yield {"type": "result", "result": result}
 
 

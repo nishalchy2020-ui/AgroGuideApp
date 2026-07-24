@@ -279,6 +279,31 @@
     if (on) scrollBottom();
   }
 
+  function showProcessingStatus(bubble, currentStatus) {
+    const steps = [
+      'Reading your prompt',
+      'Thinking',
+      'Searching local knowledge',
+      'Using RAG',
+      'Just a sec',
+    ];
+    const activeIndex = Math.max(0, steps.indexOf(currentStatus));
+    bubble.innerHTML = `
+      <div class="chat-processing" role="status" aria-live="polite">
+        <div class="chat-processing-spinner" aria-hidden="true"></div>
+        <div>
+          <p class="chat-processing-current">${escapeHtml(steps[activeIndex])}</p>
+          <div class="chat-processing-steps">
+            ${steps.map((step, index) => `
+              <span class="${index < activeIndex ? 'is-complete' : index === activeIndex ? 'is-active' : ''}">
+                ${index < activeIndex ? '✓' : '•'} ${escapeHtml(step)}
+              </span>`).join('')}
+          </div>
+        </div>
+      </div>`;
+    scrollBottom();
+  }
+
   async function post(url) {
     const res = await fetch(url, {
       method: 'POST',
@@ -296,7 +321,6 @@
     input.value = '';
     setLoading(true);
     let assistantView = null;
-    let renderer = null;
     try {
       const res = await fetch('/chatbot/message/stream', {
         method: 'POST',
@@ -306,8 +330,7 @@
       if (!res.ok || !res.body) throw new Error('Streaming request failed');
 
       assistantView = append('assistant', '', { sourceType: 'rag' });
-      assistantView.bubble.classList.add('is-streaming');
-      renderer = createStreamingRenderer(assistantView.bubble);
+      showProcessingStatus(assistantView.bubble, 'Reading your prompt');
       typing.classList.add('hidden');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -322,8 +345,8 @@
           .join('\n');
         if (!data) return;
         const event = JSON.parse(data);
-        if (event.type === 'chunk') {
-          renderer.enqueue(event.text || '');
+        if (event.type === 'status') {
+          showProcessingStatus(assistantView.bubble, event.message);
         } else if (event.type === 'done') {
           doneEvent = event;
         } else if (event.type === 'error') {
@@ -341,8 +364,7 @@
       }
       if (buffer.trim()) handleEvent(buffer);
       if (!doneEvent) throw new Error('Stream ended before completion');
-      await renderer.complete();
-      assistantView.bubble.classList.remove('is-streaming');
+      assistantView.bubble.innerHTML = renderMarkdown(stripCitationArtifacts(doneEvent.reply || ''));
 
       userView.wrap.dataset.messageId = doneEvent.user_message_id;
       userView.deleteButton.dataset.messageId = doneEvent.user_message_id;
@@ -353,11 +375,7 @@
       setLoading(false);
     } catch {
       setLoading(false);
-      const streamedText = renderer ? renderer.text() : '';
-      if (renderer) await renderer.complete();
-      const errorText = streamedText
-        ? `${streamedText}\n\nThe response was interrupted. Please try again.`
-        : 'Connection error. Please check your network and try again.';
+      const errorText = 'Connection error. Please check your network and try again.';
       if (assistantView) {
         assistantView.bubble.classList.remove('is-streaming');
         assistantView.bubble.innerHTML = renderMarkdown(stripCitationArtifacts(errorText));

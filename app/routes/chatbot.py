@@ -140,7 +140,7 @@ def stream_message():
                 conversation=conversation,
                 user_context=user_context,
             ):
-                if event["type"] == "chunk":
+                if event["type"] in ("chunk", "status"):
                     yield encode_event(event)
                 elif event["type"] == "result":
                     result = event["result"]
@@ -182,6 +182,7 @@ def stream_message():
             yield encode_event(
                 {
                     "type": "done",
+                    "reply": reply,
                     "source_type": source_type,
                     "sources": result.get("sources", []),
                     "error": bool(result.get("error")),
