@@ -1,60 +1,142 @@
 # AgroGuide
-# AgroGuide
 
-English-only modern SaaS-style AI smart farming dashboard built with Flask, SQLite, Tailwind CSS, vanilla JavaScript, and PyTorch.
+AgroGuide is an English-language smart farming web application built with Flask. It combines plant disease detection, crop tools, weather-based guidance, user history, administration, and a grounded farming chatbot in one responsive interface.
 
-## Features
+The disease scanner sends uploaded leaf images to a separately hosted prediction API and currently supports 38 plant-health classes. The chatbot uses local AgroGuide knowledge, external agricultural search results, and Google Gemini through a hybrid retrieval-augmented generation (RAG) workflow. External sources are displayed below the completed chatbot answer.
 
-- User authentication (register, login, logout, password hashing)
-- Plant disease detection (upload, drag-and-drop, camera capture)
-- PyTorch MobileNetV2 integration
-- Disease knowledge base (23+ dataset classes)
-- **Crop recommendation** — local pretrained crop ranking by soil, season, water, temperature
-- **Offline crop model** — bundled centroid model, no Gemini quota required
-- **Crop suitability checker** — scored analysis with suggestions
-- **Cultivation guides** — timeline UI per crop
-- **Irrigation advice** — growth stage and rainfall aware
-- **Fertilizer guidance** — NPK/pH optional inputs
-- **Symptom-based pest help** — links to AI leaf scan
-- Open-Meteo weather with farming advice and disease risk
-- **Google Gemini** farming assistant (replaces rule-based chat)
-- **Unified history** — search, filter by module, date, delete
-- Admin panel with analytics and knowledge management
-- Glassmorphism UI, Lucide icons, dark/light mode
+## Current features
+
+- User registration, login, logout, email verification, and password recovery
+- Plant leaf image upload, drag-and-drop, and camera capture
+- Remote plant disease prediction through `MODEL_API_URL`
+- 38 supported disease and healthy plant classes
+- Disease descriptions, severity information, and treatment guidance
+- Crop recommendation and crop suitability tools
+- Cultivation, irrigation, fertilizer, and symptom-based farming guidance
+- Open-Meteo weather forecasts and farming advice
+- Hybrid RAG chatbot using local knowledge, external search, and Gemini
+- Chatbot processing-status loader followed by the complete Markdown answer
+- External chatbot sources displayed as links below the answer
+- Searchable user activity and farming history
+- Administration dashboard and disease-knowledge management
+- Responsive interface with light and dark themes
+
+## Supported disease detection classes
+
+Total classes: **38**
+
+1. `Apple___Apple_scab`
+2. `Apple___Black_rot`
+3. `Apple___Cedar_apple_rust`
+4. `Apple___healthy`
+5. `Blueberry___healthy`
+6. `Cherry_(including_sour)___Powdery_mildew`
+7. `Cherry_(including_sour)___healthy`
+8. `Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot`
+9. `Corn_(maize)___Common_rust_`
+10. `Corn_(maize)___Northern_Leaf_Blight`
+11. `Corn_(maize)___healthy`
+12. `Grape___Black_rot`
+13. `Grape___Esca_(Black_Measles)`
+14. `Grape___Leaf_blight_(Isariopsis_Leaf_Spot)`
+15. `Grape___healthy`
+16. `Orange___Haunglongbing_(Citrus_greening)`
+17. `Peach___Bacterial_spot`
+18. `Peach___healthy`
+19. `Pepper,_bell___Bacterial_spot`
+20. `Pepper,_bell___healthy`
+21. `Potato___Early_blight`
+22. `Potato___Late_blight`
+23. `Potato___healthy`
+24. `Raspberry___healthy`
+25. `Soybean___healthy`
+26. `Squash___Powdery_mildew`
+27. `Strawberry___Leaf_scorch`
+28. `Strawberry___healthy`
+29. `Tomato___Bacterial_spot`
+30. `Tomato___Early_blight`
+31. `Tomato___Late_blight`
+32. `Tomato___Leaf_Mold`
+33. `Tomato___Septoria_leaf_spot`
+34. `Tomato___Spider_mites Two-spotted_spider_mite`
+35. `Tomato___Target_Spot`
+36. `Tomato___Tomato_Yellow_Leaf_Curl_Virus`
+37. `Tomato___Tomato_mosaic_virus`
+38. `Tomato___healthy`
+
+Predictions should be treated as decision support rather than a replacement for laboratory testing or advice from a qualified agricultural professional.
+
+## Technology stack
+
+### Backend
+
+- Python 3.11
+- Flask
+- Flask-SQLAlchemy
+- Flask-Login
+- Werkzeug
+- Gunicorn
+
+### Data and integrations
+
+- PostgreSQL with `psycopg2`
+- AWS-hosted Flask disease-prediction API
+- Google Gemini 2.5 Flash Lite, with Gemini 2.5 Flash as fallback
+- Tavily Search for external RAG evidence
+- Local AgroGuide farming knowledge
+- Open-Meteo weather data
+- Pillow for image validation and processing
+- RapidFuzz for knowledge retrieval and matching
+
+### Frontend
+
+- Jinja templates
+- Tailwind CSS
+- Custom CSS
+- Vanilla JavaScript
+- Lucide icons
+- Server-Sent Events for chatbot processing updates
+
+### Deployment
+
+- Vercel for the AgroGuide web application
+- PostgreSQL database service
+- AWS EC2 for the disease-prediction API
 
 ## Project structure
 
-```
-agroguide/
+```text
+AgroGuideApp/
+├── api/                    # Vercel Flask entry point
 ├── app/
-│   ├── routes/          # Blueprints
-│   ├── services/        # Model, weather, chatbot, knowledge
-│   ├── templates/       # Jinja2 + Tailwind
-│   ├── static/          # CSS & JS
-│   ├── uploads/         # User scan images
-│   ├── ml_models/       # Paste your model here
-│   └── data/            # Disease knowledge JSON
-├── config.py
-├── run.py
-└── requirements.txt
+│   ├── data/               # Local farming and disease knowledge
+│   ├── routes/             # Flask blueprints
+│   ├── services/           # Chatbot, search, weather, crop, and model API services
+│   ├── static/             # CSS, JavaScript, and static assets
+│   ├── templates/          # Jinja templates
+│   ├── uploads/            # Validated user image uploads
+│   ├── __init__.py         # Flask application factory
+│   └── models.py           # SQLAlchemy application models
+├── config.py               # Environment-based configuration
+├── requirements.txt        # Python dependencies
+├── run.py                  # Local development entry point
+├── schema.sql              # PostgreSQL schema
+└── vercel.json             # Vercel deployment configuration
 ```
 
-## Setup
+## Local setup
 
-### 1. Virtual environment
+### 1. Create and activate a virtual environment
 
-```bash
-cd agroguide
-python -m venv venv
-```
-
-**Windows (PowerShell):**
 ```powershell
+python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-**macOS/Linux:**
+On macOS or Linux:
+
 ```bash
+python3 -m venv venv
 source venv/bin/activate
 ```
 
@@ -64,148 +146,110 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Environment variables
+### 3. Configure environment variables
 
-```bash
-copy .env.example .env
+Copy the example configuration:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-Copy the example environment file and edit values:
+On macOS or Linux:
 
 ```bash
-copy .env.example .env
+cp .env.example .env
 ```
 
-Required / recommended variables (loaded via `python-dotenv` in `config.py`):
+Update at least the following values in `.env`:
 
-| Variable | Description |
-|----------|-------------|
-| `SECRET_KEY` | Flask session secret (required in production) |
-| `GEMINI_API_KEY` | Google AI Studio key for AI Assistant |
-| `GEMINI_MODEL` | Default `gemini-2.0-flash-lite` for the free tier; fallback `gemini-2.0-flash` |
-| `SEARCH_PROVIDER` | Internet search provider for hybrid chatbot, default `tavily` |
-| `SEARCH_API_KEY` | Search API key for Tavily, SerpAPI, Brave Search, or Google Custom Search |
-| `DATABASE_URL` | PostgreSQL connection URL; if unset, the app builds one from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` |
-| `AUTO_INIT_DB` | Creates database tables at startup when true; keep false in production after applying `schema.sql` |
-| `PORT` | Server port (default `5000`) |
+| Variable | Purpose |
+|---|---|
+| `SECRET_KEY` | Flask session and token security |
+| `DATABASE_URL` or `DB_*` | PostgreSQL connection configuration |
+| `MODEL_API_URL` | Disease-prediction API `/predict` endpoint |
+| `MODEL_API_TIMEOUT_SECONDS` | Prediction request timeout |
+| `GEMINI_API_KEY` | Google Gemini API access |
+| `GEMINI_MODEL` | Gemini model; defaults to `gemini-2.5-flash-lite` |
+| `SEARCH_PROVIDER` | External RAG search provider; defaults to `tavily` |
+| `SEARCH_API_KEY` | Tavily search API key |
+| `ADMIN_EMAIL` | Initial administrator email when automatic initialization is enabled |
+| `ADMIN_PASSWORD` | Initial administrator password when automatic initialization is enabled |
+| `AUTO_INIT_DB` | Enables startup database initialization when set to `true` |
+| `MAX_UPLOAD_MB` | Maximum accepted image upload size |
 
-The app starts without `SEARCH_API_KEY`; the chatbot uses local AgroGuide knowledge and fallback farming guidance instead of crashing.
+The application can start without a search API key, but the chatbot will rely on local knowledge and available fallback guidance. Disease scanning requires a valid `MODEL_API_URL`.
 
-### 4. Add your trained model
+### 4. Prepare PostgreSQL
 
-Copy into `app/ml_models/`:
+Create a PostgreSQL database and either:
 
-| File | Required |
-|------|----------|
-| `plant_disease_checkpoint.pth` | Yes |
-| `class_indices.json` | Yes |
+- apply `schema.sql`, which is recommended for managed or production databases; or
+- set `AUTO_INIT_DB=true` for initial local development setup.
 
-See `app/ml_models/README.md` and `class_indices.json.example` for format.
+After initialization, set `AUTO_INIT_DB=false` for normal production operation.
 
-### 5. Run the application
+### 5. Run AgroGuide
 
 ```bash
 python run.py
 ```
 
-Open http://127.0.0.1:5000
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-## Default admin account
+## Disease prediction configuration
 
-| Field | Value |
-|-------|-------|
-| Email | `admin@agroguide.com` |
-| Password | `Admin@12345` |
+The Flask web application does not load the disease-classification checkpoint locally. When a user submits a leaf image:
 
-Override via `.env`: `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+1. AgroGuide validates and stores the uploaded image.
+2. The application sends it to `MODEL_API_URL` as multipart form data.
+3. The remote prediction API returns the predicted class and confidence.
+4. AgroGuide matches the class with its disease knowledge and displays the result.
 
-On login, check **Admin login** to go directly to the admin panel.
+Configure the endpoint as follows:
 
-## Model integration
-
-`app/services/model_service.py`:
-
-- Loads `torchvision.models.mobilenet_v2`
-- Rebuilds classifier for `num_classes` from `class_indices.json`
-- Preprocess: Resize 224×224 → ToTensor → ImageNet normalize
-- Returns class name and confidence
-
-`app/services/crop_model.py`:
-
-- Loads the bundled `app/data/crop_model.json` centroid model
-- Scores soil, season, water, temperature, rainfall, and humidity locally
-- Returns the same recommendation format used by the crop route
-- Falls back to rule scoring if the local model cannot load
-
-## Database tables
-
-- `users` — accounts and admin flag
-- `scan_results` — disease predictions
-- `weather_searches` — location weather history
-- `chatbot_messages` — chat history
-- `disease_knowledge` — editable knowledge base
-- `admin_logs` — admin actions
-
-SQLite file: `agroguide.db` (project root).
-
-## Security notes
-
-- Werkzeug password hashing
-- Secure filename uploads
-- Image type validation (PNG, JPG, JPEG, WEBP)
-- 8MB default upload limit (`MAX_UPLOAD_MB`)
-- Login required for dashboard routes
-- Admin decorator for admin panel
-
-## Tech stack
-
-- Flask, Flask-SQLAlchemy, Flask-Login
-- PyTorch, torchvision, Pillow
-- Open-Meteo API (no API key)
-- Tailwind CSS (CDN), vanilla JavaScript
-
-# AgroGuide ML Models
-
-Place your trained model files in this directory:
-
-| File | Description |
-|------|-------------|
-| `plant_disease_checkpoint.pth` | PyTorch state dict or full checkpoint for MobileNetV2 classifier |
-| `class_indices.json` | JSON mapping index → class name (e.g. `{"0": "Tomato_healthy", "1": "..."}`) |
-
-## Expected checkpoint format
-
-The app loads **MobileNetV2** from torchvision and sets `num_classes` from the **checkpoint** (classifier layer shape). Labels come from `class_indices.json` and must cover every index `0 .. num_classes-1`. If your JSON has fewer names than the model, generic `class_N` labels are used for the rest.
-
-Supported checkpoint keys (first match wins):
-- Full model `state_dict`
-- Nested `model_state_dict` / `state_dict`
-
-## Example class_indices.json
-
-Either format works:
-
-**Index → class name:**
-```json
-{
-  "0": "Apple___Apple_scab",
-  "1": "Tomato_healthy"
-}
+```env
+MODEL_API_URL=http://your-model-api-host:5000/predict
+MODEL_API_TIMEOUT_SECONDS=30
 ```
 
-**Class name → index** (common PyTorch training export):
-```json
-{
-  "Apple___Apple_scab": 0,
-  "Tomato_healthy": 1
-}
-```
+The prediction API must return a class name matching one of the 38 supported identifiers.
 
-After adding files, restart the Flask app. Predictions work once both files are present.
+## Chatbot and hybrid RAG
+
+The farming chatbot follows this high-level process:
+
+1. Validate that the question is related to agriculture or AgroGuide.
+2. Retrieve relevant local AgroGuide knowledge.
+3. Retrieve external agricultural evidence when search is configured.
+4. Build a grounded prompt from the conversation, user context, and evidence.
+5. Generate the answer with Gemini.
+6. Remove citation artifacts and display the complete Markdown response.
+7. Show only valid external source links below the answer.
+
+While processing, the interface reports its current stage instead of displaying a partial answer.
+
+## Production notes
+
+- Use a long, random `SECRET_KEY`.
+- Use HTTPS for the web app, model API, and external services.
+- Keep API keys and database credentials in deployment environment variables.
+- Set `FLASK_DEBUG=false`.
+- Apply `schema.sql` before production use.
+- Keep `AUTO_INIT_DB=false` after database initialization.
+- Restrict the model API so it is not unnecessarily exposed.
+- Use a production WSGI server such as Gunicorn.
+
+## Security
+
+- Passwords are hashed with Werkzeug.
+- Authentication is required for protected routes.
+- Administrative routes require administrator access.
+- Uploaded filenames are sanitized.
+- Image extensions and upload sizes are validated.
+- CSRF tokens protect state-changing browser requests.
+- Password-reset and email-verification tokens expire.
+- External chatbot sources are restricted to valid HTTP or HTTPS URLs.
 
 ## License
 
-MIT — use freely for learning and deployment.
-
-
-
+MIT
